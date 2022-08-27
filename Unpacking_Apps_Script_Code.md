@@ -70,4 +70,21 @@ case "Legendary":
     Hero_Defense[i] = Hero_Defense[i] * (Hero_Defense_mod[i]+0.2*Hero_Mundra[i]);
   }
 ```
-13. Continue analysis from line 176 onward
+13. Line 176 onward: Heroes also have:
+```
+Survive Chance
+Guaranteed Crit
+Evade
+Lost Innate
+Consecutive Crit Bonus
+Berserker Stage
+Berserker Level
+Jarl_hp1
+Jarl_hp2
+Jarl_hp3
+Ninja_bonus
+Ninja_evasion
+Eva_cap
+Hemma_bonus
+```
+14. Line 226 onward: Setup Simulation Run

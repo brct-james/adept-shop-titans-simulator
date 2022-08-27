@@ -1,5 +1,7 @@
 use super::equipment::ElementType;
 
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 /// Defines the valid types of mini boss
@@ -8,6 +10,17 @@ pub enum MiniBossType {
     Dire,
     Huge,
     Legendary,
+}
+
+impl Distribution<MiniBossType> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> MiniBossType {
+        match rng.gen_range(0..=3) {
+            0 => MiniBossType::Agile,
+            1 => MiniBossType::Dire,
+            2 => MiniBossType::Huge,
+            _ => MiniBossType::Legendary,
+        }
+    }
 }
 
 /// A specific combat encounter for a simulation
@@ -111,7 +124,171 @@ pub fn create_encounter(
 /// Contains information for generating combat Encounters
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Dungeon {
-    barriers: Vec<String>,
-    hp_range: [i16; 2],
-    // etc
+    zone: String,
+
+    // Misc
+    max_num_heroes: u8,
+
+    // Normal Encounters
+    hp: [u32; 4],
+    damage: [u32; 4],
+    defense_cap: [u32; 4],
+    aoe_damage: [u16; 4],
+    aoe_chance: [u16; 4],
+    minimum_power: [u32; 4],
+
+    // Extreme Only
+    barrier_types: [ElementType; 3],
+    barrier_health: u32,
+
+    // Bosses
+    boss_hp: [u32; 4],
+    boss_damage: [u32; 4],
+    boss_defense_cap: [u32; 4],
+    boss_aoe_damage: [u16; 4],
+    boss_aoe_chance: [u16; 4],
+    boss_minimum_power: [u32; 4],
+    boss_barrier_type: ElementType,
+    boss_barrier_health: u32,
+}
+
+impl Dungeon {
+    /// Difficulty settings (include all that should apply):
+    /// 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
+    /// 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
+    ///
+    /// force_minibosses:
+    /// false - No Minibosses, true - Only Minibosses, none - Random Chance of Minibosses
+    pub fn generate_encounter_from_dungeon(
+        &self,
+        difficulty_settings: &Vec<usize>,
+        force_minibosses: Option<bool>,
+    ) -> Result<Encounter, &'static str> {
+        // Check for out of bounds
+        for &difficulty in difficulty_settings {
+            if difficulty > 8 || difficulty < 1 {
+                return Err("difficulty settings must be within range 1-8 inclusive");
+            }
+        }
+
+        let mut rng = rand::thread_rng();
+        let diff_rand = rng.gen_range(0..difficulty_settings.len());
+        let mut sel_diff = difficulty_settings[diff_rand];
+        let encounter: Encounter;
+
+        if sel_diff <= 4 {
+            // is not boss
+            sel_diff -= 1;
+
+            // if necessary select a miniboss type
+            let miniboss: Option<MiniBossType>;
+            match force_minibosses {
+                Some(setting) => {
+                    miniboss = if setting {
+                        Some(rand::random::<MiniBossType>())
+                    } else {
+                        None
+                    }
+                }
+                _ => {
+                    if rng.gen_range(0..2) == 1 {
+                        miniboss = Some(rand::random::<MiniBossType>());
+                    } else {
+                        miniboss = None;
+                    }
+                }
+            }
+
+            encounter = create_encounter(
+                self.zone.to_string(),
+                self.hp[sel_diff],
+                self.damage[sel_diff],
+                self.defense_cap[sel_diff],
+                self.aoe_damage[sel_diff],
+                self.aoe_chance[sel_diff],
+                false,
+                sel_diff == 4,
+                miniboss,
+                if sel_diff == 4 {
+                    Some(self.barrier_types[rng.gen_range(0..3)])
+                } else {
+                    None
+                },
+                self.barrier_health,
+                self.max_num_heroes,
+            )
+            .unwrap();
+        } else {
+            // is boss
+            sel_diff = sel_diff - 4;
+            sel_diff -= 1;
+
+            encounter = create_encounter(
+                self.zone.to_string(),
+                self.boss_hp[sel_diff],
+                self.boss_damage[sel_diff],
+                self.boss_defense_cap[sel_diff],
+                self.boss_aoe_damage[sel_diff],
+                self.boss_aoe_chance[sel_diff],
+                true,
+                sel_diff == 4,
+                None,
+                if sel_diff == 4 {
+                    Some(self.boss_barrier_type)
+                } else {
+                    None
+                },
+                self.boss_barrier_health,
+                self.max_num_heroes,
+            )
+            .unwrap();
+        }
+
+        return Ok(encounter);
+    }
+}
+
+/// Create a dungeon performing type validation and calculating certain fields
+pub fn create_dungeon(
+    zone: String,
+    max_num_heroes: u8,
+    hp: [u32; 4],
+    damage: [u32; 4],
+    defense_cap: [u32; 4],
+    aoe_damage: [u16; 4],
+    aoe_chance: [u16; 4],
+    minimum_power: [u32; 4],
+    barrier_types: [ElementType; 3],
+    barrier_health: u32,
+    boss_hp: [u32; 4],
+    boss_damage: [u32; 4],
+    boss_defense_cap: [u32; 4],
+    boss_aoe_damage: [u16; 4],
+    boss_aoe_chance: [u16; 4],
+    boss_minimum_power: [u32; 4],
+    boss_barrier_type: ElementType,
+    boss_barrier_health: u32,
+) -> Result<Dungeon, &'static str> {
+    let dungeon = Dungeon {
+        zone,
+        max_num_heroes,
+        hp,
+        damage,
+        defense_cap,
+        aoe_damage,
+        aoe_chance,
+        minimum_power,
+        barrier_types,
+        barrier_health,
+        boss_hp,
+        boss_damage,
+        boss_defense_cap,
+        boss_aoe_damage,
+        boss_aoe_chance,
+        boss_minimum_power,
+        boss_barrier_type,
+        boss_barrier_health,
+    };
+
+    return Ok(dungeon);
 }

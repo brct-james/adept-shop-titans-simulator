@@ -5,6 +5,10 @@ use serde::{Deserialize, Serialize};
 pub enum ElementType {
     Fire,
     Water,
+    Air,
+    Earth,
+    Light,
+    Dark,
 }
 
 /// Defines valid booster types

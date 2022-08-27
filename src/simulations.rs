@@ -36,12 +36,12 @@ impl Simulation {
 
 /// Create a simulation performing type validation and calculating certain fields
 pub fn create_simulation(
-    team: Team,
+    team: &Team,
     encounter: Encounter,
     metrics: Vec<String>,
 ) -> Result<Simulation, &'static str> {
     let simulation = Simulation {
-        team,
+        team: team.clone(),
         encounter,
         metrics,
     };
@@ -50,6 +50,7 @@ pub fn create_simulation(
 }
 
 /// The result of a simulation
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct SimResult {
     success: bool,
     rounds_elapsed: i16,

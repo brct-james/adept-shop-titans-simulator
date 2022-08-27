@@ -9,10 +9,12 @@ mod heroes;
 use crate::heroes::{create_hero, create_team, HeroArchetype, Team};
 
 mod dungeons;
-use crate::dungeons::{create_encounter, Dungeon, MiniBossType};
+use crate::dungeons::{create_dungeon, Dungeon};
 
-mod simulation;
-use crate::simulation::create_simulation;
+mod simulations;
+
+mod trials;
+use crate::trials::{create_trial, Trial};
 
 /// Defines valid study types:
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
@@ -32,33 +34,6 @@ struct Study {
     ranking_method: StudyType,
     trials: Vec<Trial>,
 }
-
-/// Defines instructions for running one or more Simulations
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-struct Trial {
-    identifier: String,
-    simulation_qty: i32,
-    team: Team,
-    dungeon: Dungeon,
-    results: Option<Vec<String>>,
-}
-
-// // Envisioning you would have 3 cases: trialing just skills with static gear, trialing just gear with static skills, and trialing both
-// #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
-// struct HeroTrial {
-//     hero: Hero,
-//     permute_skills: Boolean,
-//     permute_gear: Boolean,
-//     permute_both: Boolean,
-//     trial_skillset: Vec<String>,
-//     trial_gearset: Vec<String>,
-// }
-
-// impl HeroTrial {
-//     fn get_class(&self) -> Class {
-//         self.class
-//     }
-// }
 
 fn main() {
     // println!("Hello, world!");
@@ -98,25 +73,42 @@ fn main() {
 
     let team = create_team(vec![hero], None).unwrap();
 
-    let encounter = create_encounter(
-        "Custom".to_string(),
-        10u32,
-        10u32,
-        10u32,
-        10u16,
-        10u16,
-        false,
-        false,
-        Some(MiniBossType::Legendary),
-        None,
-        0u32,
-        1u8,
+    let dungeon = create_dungeon(
+        "Sun God's Tomb".to_string(),
+        4,
+        [25000, 40000, 80000, 430000],
+        [40, 50, 60, 130],
+        [12000, 14400, 16200, 42000],
+        [20, 25, 30, 65],
+        [25, 25, 25, 25],
+        [1200, 1500, 2500, 7500],
+        [ElementType::Dark, ElementType::Water, ElementType::Air],
+        250,
+        [60000, 90000, 130000, 750000],
+        [60, 70, 80, 175],
+        [16800, 20400, 22800, 47000],
+        [30, 35, 40, 80],
+        [25, 25, 25, 25],
+        [1800, 2500, 4000, 10000],
+        ElementType::Light,
+        350,
     )
     .unwrap();
 
-    let mut simulation = create_simulation(team, encounter, vec![]).unwrap();
+    let mut trial = create_trial(
+        "".to_string(),
+        100000,
+        team,
+        dungeon,
+        vec![3, 4, 7, 8],
+        None,
+    )
+    .unwrap();
 
-    let sim_res = simulation.run().unwrap();
+    trial.run_simulations_single_threaded();
 
-    println!("Complete {:#?}", sim_res.is_success());
+    let res = trial.get_results_unranked();
+
+    println!("Completed. # of results: {:#?}", res.len());
+    // println!("Example: {:#?} {:#?}", res[0].is_success(), res[0])
 }

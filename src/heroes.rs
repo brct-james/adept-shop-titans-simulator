@@ -105,6 +105,21 @@ pub struct Hero {
     attack_modifier: f64,  // %
     defense_modifier: f64, // %
     extreme_crit_bonus: f64,
+    // line 176+
+    survive_chance: f64,
+    guaranteed_crit: bool,
+    guaranteed_evade: bool,
+    lost_innate: i8,
+    consecutive_crit_bonus: f64,
+    berserker_stage: u8,
+    berserker_level: u8,
+    jarl_hp_stage_1: f64,
+    jarl_hp_stage_2: f64,
+    jarl_hp_stage_3: f64,
+    ninja_bonus: f64,
+    ninja_evasion: f64,
+    evasion_cap: f64,
+    hemma_bonus: f64,
     // skills: Vec<Skill>,
 }
 
@@ -165,10 +180,36 @@ pub fn create_hero(
         attack_modifier: 1.0f64 + f64::from(attack_modifier) / 100.0f64,
         defense_modifier: 1.0f64 + f64::from(defense_modifier) / 100.0f64,
         extreme_crit_bonus: 0.0f64,
+        survive_chance: 0f64,
+        guaranteed_crit: false,
+        guaranteed_evade: false,
+        lost_innate: 0i8,
+        consecutive_crit_bonus: 0f64,
+        berserker_stage: 0u8,
+        berserker_level: 0u8,
+        jarl_hp_stage_1: 0.75f64,
+        jarl_hp_stage_2: 0.5f64,
+        jarl_hp_stage_3: 0.25f64,
+        ninja_bonus: 0f64,
+        ninja_evasion: 0f64,
+        evasion_cap: 0.75f64,
+        hemma_bonus: 0f64,
     };
 
     hero.attack /= hero.attack_modifier;
     hero.defense /= hero.defense_modifier;
+
+    if hero.rank == 4 {
+        hero.jarl_hp_stage_1 = 0.8f64;
+        hero.jarl_hp_stage_2 = 0.55f64;
+        hero.jarl_hp_stage_3 = 0.3f64;
+    }
+
+    if hero.class == "Berserker" || hero.class == "Jarl" {
+        hero.berserker_level = std::cmp::min(hero.rank, 4);
+    } else if hero.class == "Pathfinder" {
+        hero.evasion_cap = 0.78f64;
+    }
 
     return Ok(hero);
 }
