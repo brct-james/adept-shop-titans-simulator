@@ -27,17 +27,17 @@ impl Distribution<MiniBossType> for Standard {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Encounter {
     zone: String,
-    hp: u32,
-    hp_max: u32,
-    damage: u32,
-    defense_cap: u32,
-    aoe_damage_base: u16,
+    hp: f64,
+    hp_max: f64,
+    damage: f64,
+    defense_cap: f64,
+    aoe_damage_base: f64,
     aoe_chance: f64,
     is_boss: bool,
     is_extreme: bool,
     barrier_type: Option<ElementType>,
-    barrier_hp: u32,
-    barrier_hp_max: u32,
+    barrier_hp: f64,
+    barrier_hp_max: f64,
     max_num_heroes: u8,
     evasion: f64,
     crit_chance_modifier: f64,
@@ -50,52 +50,102 @@ impl Encounter {
     pub fn is_extreme_or_boss(&self) -> (bool, bool) {
         return (self.is_extreme, self.is_boss);
     }
+
+    pub fn get_defense_cap(&self) -> f64 {
+        return self.defense_cap;
+    }
+
+    pub fn get_damage_info(&self) -> (f64, f64) {
+        return (self.damage, self.aoe_damage);
+    }
+
+    pub fn get_aoe_info(&self) -> (f64, f64) {
+        return (self.aoe_chance, self.aoe_damage);
+    }
+
+    pub fn get_crit_info(&self) -> (f64, f64) {
+        return (self.crit_chance, self.crit_chance_modifier);
+    }
+
+    pub fn get_barrier_info(&self) -> (f64, f64, f64, Option<ElementType>) {
+        return (
+            self.barrier_hp,
+            self.barrier_hp_max,
+            self.barrier_modifier,
+            self.barrier_type,
+        );
+    }
+
+    pub fn set_barrier_hp_and_modifier(&mut self, barrier_hp: f64, barrier_modifier: f64) {
+        self.barrier_hp = barrier_hp;
+        self.barrier_modifier = barrier_modifier;
+    }
+
+    pub fn get_hp_info(&self) -> (f64, f64) {
+        return (self.hp, self.hp_max);
+    }
+
+    pub fn set_hp(&mut self, hp: f64) {
+        self.hp = hp;
+    }
+
+    pub fn get_evasion(&self) -> f64 {
+        return self.evasion;
+    }
+
+    pub fn init_barrier_modifier(&mut self) {
+        if self.barrier_hp == 0.0 {
+            self.barrier_modifier = 1.0;
+        } else {
+            self.barrier_modifier = 0.2;
+        }
+    }
 }
 
 /// Create an encounter performing type validation and calculating certain fields
 pub fn create_encounter(
     zone: String,
-    hp: u32,
-    damage: u32,
-    defense_cap: u32,
-    aoe_damage_base: u16,
+    hp: f64,
+    damage: f64,
+    defense_cap: f64,
+    aoe_damage_base: f64,
     aoe_chance: u16,
     is_boss: bool,
     is_extreme: bool,
     mini_boss: Option<MiniBossType>,
     barrier_type: Option<ElementType>,
-    barrier_hp: u32,
+    barrier_hp: f64,
     max_num_heroes: u8,
 ) -> Result<Encounter, &'static str> {
-    if damage <= 0 {
+    if damage <= 0.0 {
         return Err("Damage <= 0");
     }
 
-    let mut evasion = -1.0f64;
-    let mut hp_modifier = 1.0f64;
-    let mut damage_modifier = 1.0f64;
-    let mut crit_chance_modifier = 1.0f64;
-    let crit_chance = 0.1f64;
-    let barrier_modifier = 0.2f64;
+    let mut evasion = -1.0;
+    let mut hp_modifier = 1.0;
+    let mut damage_modifier = 1.0;
+    let mut crit_chance_modifier = 1.0;
+    let crit_chance = 0.1;
+    let barrier_modifier = 0.2;
     let aoe_damage = f64::from(aoe_damage_base) / f64::from(damage);
 
     match mini_boss {
         Some(mb) => match mb {
             MiniBossType::Agile => {
-                evasion = 0.4f64;
+                evasion = 0.4;
             }
             MiniBossType::Dire => {
-                hp_modifier = 1.5f64;
-                crit_chance_modifier = 3f64;
+                hp_modifier = 1.5;
+                crit_chance_modifier = 3.0;
             }
             MiniBossType::Huge => {
-                hp_modifier = 2.0f64;
+                hp_modifier = 2.0;
             }
             MiniBossType::Legendary => {
-                hp_modifier = 1.5f64;
-                damage_modifier = 1.25f64;
-                crit_chance_modifier = 1.5f64;
-                evasion = 0.1f64;
+                hp_modifier = 1.5;
+                damage_modifier = 1.25;
+                crit_chance_modifier = 1.5;
+                evasion = 0.1;
             }
         },
         _ => (),
@@ -103,9 +153,9 @@ pub fn create_encounter(
 
     let encounter = Encounter {
         zone,
-        hp: (f64::from(hp) * hp_modifier).round() as u32,
-        hp_max: (f64::from(hp) * hp_modifier).round() as u32,
-        damage: (f64::from(damage) * damage_modifier).round() as u32,
+        hp: hp * hp_modifier,
+        hp_max: hp * hp_modifier,
+        damage: damage * damage_modifier,
         defense_cap,
         aoe_damage_base,
         aoe_chance: f64::from(aoe_chance) / 100.0f64,
@@ -126,7 +176,7 @@ pub fn create_encounter(
 }
 
 /// Contains information for generating combat Encounters
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Dungeon {
     zone: String,
 
@@ -134,26 +184,26 @@ pub struct Dungeon {
     max_num_heroes: u8,
 
     // Normal Encounters
-    hp: [u32; 4],
-    damage: [u32; 4],
-    defense_cap: [u32; 4],
-    aoe_damage: [u16; 4],
+    hp: [f64; 4],
+    damage: [f64; 4],
+    defense_cap: [f64; 4],
+    aoe_damage: [f64; 4],
     aoe_chance: [u16; 4],
     minimum_power: [u32; 4],
 
     // Extreme Only
     barrier_types: [ElementType; 3],
-    barrier_health: u32,
+    barrier_health: f64,
 
     // Bosses
-    boss_hp: [u32; 4],
-    boss_damage: [u32; 4],
-    boss_defense_cap: [u32; 4],
-    boss_aoe_damage: [u16; 4],
+    boss_hp: [f64; 4],
+    boss_damage: [f64; 4],
+    boss_defense_cap: [f64; 4],
+    boss_aoe_damage: [f64; 4],
     boss_aoe_chance: [u16; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: ElementType,
-    boss_barrier_health: u32,
+    boss_barrier_health: f64,
 }
 
 impl Dungeon {
@@ -256,22 +306,22 @@ impl Dungeon {
 pub fn create_dungeon(
     zone: String,
     max_num_heroes: u8,
-    hp: [u32; 4],
-    damage: [u32; 4],
-    defense_cap: [u32; 4],
-    aoe_damage: [u16; 4],
+    hp: [f64; 4],
+    damage: [f64; 4],
+    defense_cap: [f64; 4],
+    aoe_damage: [f64; 4],
     aoe_chance: [u16; 4],
     minimum_power: [u32; 4],
     barrier_types: [ElementType; 3],
-    barrier_health: u32,
-    boss_hp: [u32; 4],
-    boss_damage: [u32; 4],
-    boss_defense_cap: [u32; 4],
-    boss_aoe_damage: [u16; 4],
+    barrier_health: f64,
+    boss_hp: [f64; 4],
+    boss_damage: [f64; 4],
+    boss_defense_cap: [f64; 4],
+    boss_aoe_damage: [f64; 4],
     boss_aoe_chance: [u16; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: ElementType,
-    boss_barrier_health: u32,
+    boss_barrier_health: f64,
 ) -> Result<Dungeon, &'static str> {
     let dungeon = Dungeon {
         zone,

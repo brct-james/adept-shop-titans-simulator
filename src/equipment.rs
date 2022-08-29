@@ -16,6 +16,6 @@ pub enum ElementType {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BoosterType {
     PowerBooster,
-    SuperPowerBooser,
+    SuperPowerBooster,
     MegaPowerBooster,
 }

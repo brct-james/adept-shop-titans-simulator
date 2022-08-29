@@ -19,13 +19,18 @@ pub struct Trial {
 impl Trial {
     pub fn run_simulations_single_threaded(&mut self) {
         while self.results.len() < self.simulation_qty {
-            println!("Running simulation iteration:  # {:#?}", self.results.len());
+            print!("Running simulation iteration:  # {:#?}", self.results.len());
             let encounter = self
                 .dungeon
                 .generate_encounter_from_dungeon(&self.difficulty_settings, self.force_minibosses)
                 .unwrap();
             let mut simulation = create_simulation(&self.team, encounter, vec![]).unwrap();
             let sim_res = simulation.run().unwrap();
+            print!(
+                "\rRunning simulation iteration: # {:#?} | Success: {:#?}\n",
+                self.results.len(),
+                sim_res.is_success()
+            );
             self.results.push(sim_res);
         }
     }

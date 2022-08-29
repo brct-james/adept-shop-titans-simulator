@@ -47,69 +47,99 @@ fn main() {
     // }
 
     let hero = create_hero(
-        "HeroID".to_string(),
-        "Thief".to_string(),
-        HeroArchetype::GreenRogue,
-        1u8,
-        0u8,
-        1u8,
-        10u32,
-        10u32,
-        10u32,
-        10u16,
-        10u16,
-        1.0f64,
-        10u16,
-        10u16,
-        ElementType::Fire,
-        0u8,
-        0u8,
-        0u8,
-        0u8,
-        0u8,
-        10u16,
-        10u16,
+        "Tammara".to_string(),
+        "Arch Druid".to_string(),
+        HeroArchetype::BlueSpellcaster,
+        35,
+        0,
+        3,
+        628.0,
+        17485,
+        2869,
+        10,
+        7,
+        340.0,
+        0,
+        100,
+        ElementType::Earth,
+        0,
+        0,
+        1,
+        0,
+        0,
+        330,
+        80,
     )
     .unwrap();
 
-    let team = create_team(vec![hero], None).unwrap();
+    let champion = create_hero(
+        "Champion".to_string(),
+        "Argon".to_string(),
+        HeroArchetype::Champion,
+        36,
+        10,
+        2,
+        769.0,
+        2845,
+        4708,
+        90,
+        5,
+        2.0,
+        0,
+        80,
+        ElementType::Light,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
+    .unwrap();
+
+    let team = create_team(vec![hero, champion], None).unwrap();
 
     let dungeon = create_dungeon(
         "Sun God's Tomb".to_string(),
         4,
-        [25000, 40000, 80000, 430000],
-        [40, 50, 60, 130],
-        [12000, 14400, 16200, 42000],
-        [20, 25, 30, 65],
+        [25000.0, 40000.0, 80000.0, 430000.0],
+        [40.0, 50.0, 60.0, 130.0],
+        [12000.0, 14400.0, 16200.0, 42000.0],
+        [20.0, 25.0, 30.0, 65.0],
         [25, 25, 25, 25],
         [1200, 1500, 2500, 7500],
         [ElementType::Dark, ElementType::Water, ElementType::Air],
-        250,
-        [60000, 90000, 130000, 750000],
-        [60, 70, 80, 175],
-        [16800, 20400, 22800, 47000],
-        [30, 35, 40, 80],
+        250.0,
+        [60000.0, 90000.0, 130000.0, 750000.0],
+        [60.0, 70.0, 80.0, 175.0],
+        [16800.0, 20400.0, 22800.0, 47000.0],
+        [30.0, 35.0, 40.0, 80.0],
         [25, 25, 25, 25],
         [1800, 2500, 4000, 10000],
         ElementType::Light,
-        350,
+        350.0,
     )
     .unwrap();
 
-    let mut trial = create_trial(
-        "".to_string(),
-        50000,
-        team,
-        dungeon,
-        vec![3, 4, 7, 8],
-        None,
-    )
-    .unwrap();
+    let mut trial =
+        create_trial("".to_string(), 50000, team, dungeon, vec![3, 4, 7, 8], None).unwrap();
 
     trial.run_simulations_single_threaded();
 
     let res = trial.get_results_unranked();
 
-    println!("Completed. # of results: {:#?}", res.len());
+    let mut successes = 0;
+    for sr in &res {
+        if sr.is_success() {
+            successes += 1;
+        }
+    }
+
+    println!(
+        "Completed. {:#?} successes of {:#?} simulations",
+        successes,
+        res.len()
+    );
     // println!("Example: {:#?} {:#?}", res[0].is_success(), res[0])
 }

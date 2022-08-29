@@ -167,4 +167,8 @@ Hemma_bonus
 21. line 445+: Set vars for each simulation and setup sim conditions
 
 ### Notes/TODO:
-I think the spreadsheet doesn't use spirit qty but rather the actual value of the spirits (e.g. lizard gives +3hp so for qty 1 the spreadsheet would actually be 3 lizard...) Double check and then modify as appropriate
+- I think the spreadsheet doesn't use spirit qty but rather the actual value of the spirits (e.g. lizard gives +3hp so for qty 1 the spreadsheet would actually be 3 lizard...) Double check and then modify as appropriate
+
+- Must convert to using getters and setters cause 795 private field errors is 795 too many
+
+- Must implement SimResult and aggregation in trials
