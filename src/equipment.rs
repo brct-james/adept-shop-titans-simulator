@@ -9,10 +9,13 @@ pub enum ElementType {
     Earth,
     Light,
     Dark,
+    Any,
 }
 
 /// Defines valid booster types
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
 pub enum BoosterType {
-    LootBugleI,
+    PowerBooster,
+    SuperPowerBooser,
+    MegaPowerBooster,
 }

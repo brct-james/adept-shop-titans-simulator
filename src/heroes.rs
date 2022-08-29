@@ -10,6 +10,7 @@ pub struct Team {
     num_fighters: u8,
     num_rogues: u8,
     num_spellcasters: u8,
+    num_tricksters: u8,
     champion: String,
     champion_innate_tier: u8,
 }
@@ -46,6 +47,7 @@ pub fn create_team(heroes: Vec<Hero>, booster: Option<BoosterType>) -> Result<Te
     let mut num_fighters = 0u8;
     let mut num_rogues = 0u8;
     let mut num_spellcasters = 0u8;
+    let mut num_tricksters = 0u8;
     let mut champion = "None".to_string();
     let mut champion_innate_tier = 1u8;
 
@@ -65,6 +67,9 @@ pub fn create_team(heroes: Vec<Hero>, booster: Option<BoosterType>) -> Result<Te
                 }
             }
         }
+        if hero.class == "Trickster" {
+            num_tricksters += 1;
+        }
     }
 
     let team = Team {
@@ -73,6 +78,7 @@ pub fn create_team(heroes: Vec<Hero>, booster: Option<BoosterType>) -> Result<Te
         num_fighters,
         num_rogues,
         num_spellcasters,
+        num_tricksters,
         champion,
         champion_innate_tier,
     };
@@ -88,7 +94,9 @@ pub struct Hero {
     archetype: HeroArchetype,
     level: u8,
     rank: u8,
+    innate_tier: u8,
     hp: u32,
+    hp_max: u32,
     attack: f64,
     defense: f64,
     threat: u16,
@@ -120,6 +128,10 @@ pub struct Hero {
     ninja_evasion: f64,
     evasion_cap: f64,
     hemma_bonus: f64,
+    // line 451
+    damage_taken: f64,
+    crit_damage_taken: f64,
+    damage_dealt: f64,
     // skills: Vec<Skill>,
 }
 
@@ -140,6 +152,7 @@ pub fn create_hero(
     archetype: HeroArchetype,
     level: u8,
     rank: u8,
+    innate_tier: u8,
     hp: u32,
     attack: u32,
     defense: u32,
@@ -163,7 +176,9 @@ pub fn create_hero(
         archetype,
         level,
         rank,
+        innate_tier,
         hp,
+        hp_max: hp,
         attack: f64::from(attack),
         defense: f64::from(defense),
         threat,
@@ -194,6 +209,9 @@ pub fn create_hero(
         ninja_evasion: 0f64,
         evasion_cap: 0.75f64,
         hemma_bonus: 0f64,
+        damage_taken: 0f64,
+        crit_damage_taken: 0f64,
+        damage_dealt: 0f64,
     };
 
     hero.attack /= hero.attack_modifier;

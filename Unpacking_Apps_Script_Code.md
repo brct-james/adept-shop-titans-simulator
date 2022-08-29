@@ -88,3 +88,83 @@ Eva_cap
 Hemma_bonus
 ```
 14. Line 226 onward: Setup Simulation Run
+```
+//Hero chance to get targeted
+  var Hero1_Target;
+  var Hero2_Target;
+  var Hero3_Target;
+  var Hero4_Target;
+  var Target_Tot;
+  var target_chance;
+  var Num_Heroes = 0;
+  var Heroes_Alive = 0;
+  var Update_Target = true;
+  var Round = 0;
+  var Shark_active;
+  var Dinosaur_active;
+  var Who_Hemma;
+  var Lord_present;
+  var Lord_hero;
+  
+  var Times_quest_won = 0;
+  
+  var Polonia_loot = 0;
+  var Polonia_loot_tot = 0;
+  var Polonia_loot_cap = 20;
+  var Polonia_loot_cap_hit = 0;
+  var loot_chance;
+  var count_loot = false;
+  var Num_tricksters = 0;
+   
+  var Times_Hero_survived = [];
+  var Hero_Damage_fight = [];
+  var Hero_Damage_Dealt_avg = [];
+  var Hero_Damage_Dealt_max = [];
+  var Hero_Damage_Dealt_min = [];
+  var Hero_HP_Remaining_avg = [];
+  var Hero_HP_Remaining_max = [];
+  var Hero_HP_Remaining_min = [];
+```
+15. Line 265+: For each hero initialize these storage lists
+```
+  for (var i = 0; i < Hero_Class.length; i++) {
+    Times_Hero_survived.push(0);
+    Hero_Damage_fight.push(0);
+    Hero_Damage_Dealt_avg.push(0);
+    Hero_Damage_Dealt_max.push(0);
+    Hero_Damage_Dealt_min.push(1000000000);
+    Hero_HP_Remaining_avg.push(0);
+    Hero_HP_Remaining_max.push(0);
+    Hero_HP_Remaining_min.push(100000);   
+  }
+```
+16. track rounds avg/max/min
+```
+  var Rounds_avg = 0;
+  var Rounds_max = 0;
+  var Rounds_min = 1000;
+```
+17. Get booster info and set up other variables:
+```
+  var Booster = SpreadsheetApp.getActiveSheet().getRange(8, 2).getValue();
+  var Booster_Attack_bonus  = 0.0;
+  var Booster_Defense_bonus = 0.0;
+  var Hemma_mult = 0;
+  var target = 0;
+```
+18. Check for a lord alive amongst team:
+```
+  for (var i = 0; i < Hero_Class.length; i++) {
+    if(Hero_Class[i]=="Lord" && Hero_HP_val[i] > 0)  {
+      Lord_present = true;
+      Lord_hero = i;
+      break;
+    }
+  }
+```
+19. Line 300+: Calculate champion bonuses
+20. line 346 set Who_Hemma to index of hemma in heroes list
+21. line 445+: Set vars for each simulation and setup sim conditions
+
+### Notes/TODO:
+I think the spreadsheet doesn't use spirit qty but rather the actual value of the spirits (e.g. lizard gives +3hp so for qty 1 the spreadsheet would actually be 3 lizard...) Double check and then modify as appropriate

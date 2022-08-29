@@ -28,6 +28,7 @@ impl Distribution<MiniBossType> for Standard {
 pub struct Encounter {
     zone: String,
     hp: u32,
+    hp_max: u32,
     damage: u32,
     defense_cap: u32,
     aoe_damage_base: u16,
@@ -36,6 +37,7 @@ pub struct Encounter {
     is_extreme: bool,
     barrier_type: Option<ElementType>,
     barrier_hp: u32,
+    barrier_hp_max: u32,
     max_num_heroes: u8,
     evasion: f64,
     crit_chance_modifier: f64,
@@ -102,6 +104,7 @@ pub fn create_encounter(
     let encounter = Encounter {
         zone,
         hp: (f64::from(hp) * hp_modifier).round() as u32,
+        hp_max: (f64::from(hp) * hp_modifier).round() as u32,
         damage: (f64::from(damage) * damage_modifier).round() as u32,
         defense_cap,
         aoe_damage_base,
@@ -110,6 +113,7 @@ pub fn create_encounter(
         is_extreme,
         barrier_type,
         barrier_hp,
+        barrier_hp_max: barrier_hp,
         max_num_heroes,
         evasion,
         crit_chance_modifier,

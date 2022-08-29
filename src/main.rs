@@ -52,6 +52,7 @@ fn main() {
         HeroArchetype::GreenRogue,
         1u8,
         0u8,
+        1u8,
         10u32,
         10u32,
         10u32,
@@ -97,7 +98,7 @@ fn main() {
 
     let mut trial = create_trial(
         "".to_string(),
-        100000,
+        50000,
         team,
         dungeon,
         vec![3, 4, 7, 8],
