@@ -191,25 +191,29 @@ impl Simulation {
         }
 
         // TODO If key in metrics then add else skip
-
+        let (ehprem, emaxhp) = self.encounter.get_hp_info();
         let res = SimResult {
             success: won_fight,
-            rounds_elapsed: 0i16,
+            rounds_elapsed: round,
             team_dmg_taken: vec![0i16],
             team_dmg_dealt: vec![0i16],
             team_dmg_dodged: vec![0i16],
             team_bonus_loot_qty: 0i8,
             team_rest_times: vec![0i32],
             times_survived: vec![0u32],
-            damage_fight: vec![0u32],
+            damage_dealt_during_fight: self.team.get_team_damage_dealt_total(),
             damage_dealt_avg: vec![0u32],
             damage_dealt_max: vec![0u32],
             damage_dealt_min: vec![0u32],
             hp_remaining_avg: vec![0u32],
             hp_remaining_max: vec![0u32],
             hp_remaining_min: vec![0u32],
+            team: self.team.clone(),
+            encounter: self.encounter.clone(),
             polonia_loot_total,
             polonia_loot_cap_hit,
+            encounter_hp_remaining: ehprem,
+            encounter_max_hp: emaxhp,
         };
 
         return Ok(res);
@@ -232,7 +236,7 @@ pub fn create_simulation(
 }
 
 /// The result of a simulation
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct SimResult {
     success: bool,
     rounds_elapsed: i16,
@@ -243,7 +247,7 @@ pub struct SimResult {
     team_rest_times: Vec<i32>,
     // line 226+ for each hero:
     times_survived: Vec<u32>,
-    damage_fight: Vec<u32>,
+    damage_dealt_during_fight: Vec<f64>,
     damage_dealt_avg: Vec<u32>,
     damage_dealt_max: Vec<u32>,
     damage_dealt_min: Vec<u32>,
@@ -251,12 +255,36 @@ pub struct SimResult {
     hp_remaining_max: Vec<u32>,
     hp_remaining_min: Vec<u32>,
     // other
+    team: Team,
+    encounter: Encounter,
     polonia_loot_total: u8,
     polonia_loot_cap_hit: i32,
+    encounter_hp_remaining: f64,
+    encounter_max_hp: f64,
 }
 
 impl SimResult {
     pub fn is_success(&self) -> bool {
         return self.success;
+    }
+
+    pub fn get_rounds(&self) -> i16 {
+        return self.rounds_elapsed;
+    }
+
+    pub fn print_team(&self) {
+        println!("{:#?}", self.team);
+    }
+
+    pub fn print_encounter(&self) {
+        println!("{:#?}", self.encounter);
+    }
+
+    pub fn get_damage_dealt_during_fight(&self) -> Vec<f64> {
+        return self.damage_dealt_during_fight.clone();
+    }
+
+    pub fn get_encounter_hp_remaining(&self) -> f64 {
+        return self.encounter_hp_remaining;
     }
 }

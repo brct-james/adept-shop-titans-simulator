@@ -268,7 +268,11 @@ impl Dungeon {
                 } else {
                     None
                 },
-                self.barrier_health,
+                if sel_diff == 4 {
+                    self.barrier_health
+                } else {
+                    0.0
+                },
                 self.max_num_heroes,
             )
             .unwrap();

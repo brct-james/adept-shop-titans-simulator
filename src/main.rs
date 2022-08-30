@@ -46,7 +46,7 @@ fn main() {
     //     println!("{:?}", hero.get_class());
     // }
 
-    let hero = create_hero(
+    let _tammara = create_hero(
         "Tammara".to_string(),
         "Arch Druid".to_string(),
         HeroArchetype::BlueSpellcaster,
@@ -72,8 +72,8 @@ fn main() {
     )
     .unwrap();
 
-    let champion = create_hero(
-        "Champion".to_string(),
+    let _argon = create_hero(
+        "argon".to_string(),
         "Argon".to_string(),
         HeroArchetype::Champion,
         36,
@@ -98,7 +98,33 @@ fn main() {
     )
     .unwrap();
 
-    let team = create_team(vec![hero, champion], None).unwrap();
+    let _dormammu = create_hero(
+        "Dormammu".to_string(),
+        "Berserker".to_string(),
+        HeroArchetype::RedFighter,
+        23,
+        0,
+        2,
+        470.0,
+        1849,
+        1658,
+        90,
+        5,
+        2.0,
+        8,
+        60,
+        ElementType::Fire,
+        0,
+        0,
+        0,
+        0,
+        0,
+        95,
+        80,
+    )
+    .unwrap();
+
+    let team = create_team(vec![_dormammu], None).unwrap();
 
     let dungeon = create_dungeon(
         "Sun God's Tomb".to_string(),
@@ -122,24 +148,54 @@ fn main() {
     )
     .unwrap();
 
+    // Difficulty settings (include all that should apply):
+    // 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
+    // 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
+
     let mut trial =
-        create_trial("".to_string(), 50000, team, dungeon, vec![3, 4, 7, 8], None).unwrap();
+        create_trial("".to_string(), 5000, team, dungeon, vec![1], Some(false)).unwrap();
 
     trial.run_simulations_single_threaded();
 
     let res = trial.get_results_unranked();
 
     let mut successes = 0;
+    let mut min_rounds = i16::max_value();
+    let mut avg_rounds = 0.0;
+    let mut max_rounds = i16::min_value();
+    let mut dmg_dealt: [Vec<f64>; 5] = Default::default();
+    let mut hp_remaining: Vec<f64> = vec![];
     for sr in &res {
         if sr.is_success() {
             successes += 1;
         }
+        min_rounds = std::cmp::min(min_rounds, sr.get_rounds());
+        avg_rounds += sr.get_rounds() as f64;
+        max_rounds = std::cmp::max(max_rounds, sr.get_rounds());
+        let dmg_fight = sr.get_damage_dealt_during_fight();
+        for (i, hero_damage) in dmg_fight.iter().enumerate() {
+            dmg_dealt[i].push(*hero_damage);
+        }
+        hp_remaining.push(sr.get_encounter_hp_remaining());
     }
 
+    avg_rounds = avg_rounds / res.len() as f64;
+    let avg_dmg_dealt_0 = dmg_dealt[0].iter().sum::<f64>() / dmg_dealt[0].len() as f64;
+    let avg_encounter_hp_remaining = hp_remaining.iter().sum::<f64>() / hp_remaining.len() as f64;
+
     println!(
-        "Completed. {:#?} successes of {:#?} simulations",
+        "Completed. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
         successes,
-        res.len()
+        res.len(),
+        successes as f64 / res.len() as f64 * 100.0,
+        min_rounds,
+        avg_rounds,
+        max_rounds,
+        avg_dmg_dealt_0,
+        avg_encounter_hp_remaining,
     );
+
+    res[0].print_team();
+    res[0].print_encounter();
     // println!("Example: {:#?} {:#?}", res[0].is_success(), res[0])
 }

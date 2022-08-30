@@ -27,9 +27,10 @@ impl Trial {
             let mut simulation = create_simulation(&self.team, encounter, vec![]).unwrap();
             let sim_res = simulation.run().unwrap();
             print!(
-                "\rRunning simulation iteration: # {:#?} | Success: {:#?}\n",
+                "\rRunning simulation iteration: # {:#?} | Success: {:#?} in {:#?} rounds\n",
                 self.results.len(),
-                sim_res.is_success()
+                sim_res.is_success(),
+                sim_res.get_rounds(),
             );
             self.results.push(sim_res);
         }

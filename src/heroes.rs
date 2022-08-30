@@ -42,20 +42,20 @@ impl Team {
         // Calc the amount of damage taken by each hero in encounter
         for hero in &mut self.heroes {
             if hero.defense <= defense_cap / 6.0 {
-                hero.damage_taken = 1.5 * damage
+                hero.damage_taken_when_hit = 1.5 * damage
                     + ((hero.defense - 0.0) / (defense_cap / 6.0 - 0.0))
                         * (0.5 * damage - 1.5 * damage);
             } else if hero.defense <= defense_cap / 3.0 {
-                hero.damage_taken = 0.5 * damage
+                hero.damage_taken_when_hit = 0.5 * damage
                     + ((hero.defense - defense_cap / 6.0)
                         / (defense_cap / 3.0 - defense_cap / 6.0))
                         * (0.3 * damage - 0.5 * damage);
             } else {
-                hero.damage_taken = 0.3 * damage
+                hero.damage_taken_when_hit = 0.3 * damage
                     + ((hero.defense - defense_cap / 3.0) / (defense_cap - defense_cap / 3.0))
                         * (0.25 * damage - 0.3 * damage);
             }
-            hero.crit_damage_taken = f64::max(hero.damage_taken, damage) * 1.5;
+            hero.crit_damage_taken_when_hit = f64::max(hero.damage_taken_when_hit, damage) * 1.5;
         }
     }
 
@@ -346,7 +346,8 @@ impl Team {
             }
         }
 
-        let mut lord_hero = self.heroes[lord_index].clone();
+        let mut lord_hero: Hero;
+        lord_hero = self.heroes[lord_index].clone();
 
         if rng.gen::<f64>() < aoe_chance && heroes_alive > 1 {
             for hero in &mut self.heroes {
@@ -364,7 +365,7 @@ impl Team {
                             hero.guaranteed_crit = true;
                         }
                     } else {
-                        hero.hp -= (hero.damage_taken * aoe_damage).ceil();
+                        hero.hp -= (hero.damage_taken_when_hit * aoe_damage).ceil();
                         if hero.hp <= 0.0 {
                             if rng.gen::<f64>() >= hero.survive_chance {
                                 // Surviving Fatal Blow did not activate
@@ -375,8 +376,9 @@ impl Team {
                                 {
                                     // Lord Saves
                                     lord_save = false;
-                                    hero.hp += (hero.damage_taken * aoe_damage).ceil();
-                                    lord_hero.hp -= (lord_hero.damage_taken * aoe_damage).ceil();
+                                    hero.hp += (hero.damage_taken_when_hit * aoe_damage).ceil();
+                                    lord_hero.hp -=
+                                        (lord_hero.damage_taken_when_hit * aoe_damage).ceil();
                                     if lord_hero.hp <= 0.0 {
                                         // Lord Dies in Saving
                                         if rng.gen::<f64>() >= lord_hero.survive_chance {
@@ -416,7 +418,6 @@ impl Team {
                     break;
                 }
             }
-
             // check hit/evade
             let hero = &mut self.heroes[target];
             if hero.guaranteed_evade
@@ -433,9 +434,9 @@ impl Team {
                 // Hit, check crit
                 if rng.gen::<f64>() > crit_chance * crit_chance_modifier + hero.extreme_crit_bonus {
                     // not crit
-                    hero.hp -= hero.damage_taken;
+                    hero.hp -= hero.damage_taken_when_hit;
                 } else {
-                    hero.hp -= hero.crit_damage_taken;
+                    hero.hp -= hero.crit_damage_taken_when_hit;
                 }
 
                 if hero.hp <= 0.0 {
@@ -444,8 +445,8 @@ impl Team {
                         if lord_present && lord_save && hero.class != "Lord" && lord_hero.hp > 0.0 {
                             // Lord Saves
                             lord_save = false;
-                            hero.hp += hero.damage_taken;
-                            lord_hero.hp -= lord_hero.damage_taken;
+                            hero.hp += hero.damage_taken_when_hit;
+                            lord_hero.hp -= lord_hero.damage_taken_when_hit;
                             if lord_hero.hp <= 0.0 {
                                 // lord dies in saving
                                 if rng.gen::<f64>() >= lord_hero.survive_chance {
@@ -480,7 +481,9 @@ impl Team {
         }
 
         // Save lord_hero back to heroes
-        self.heroes[lord_index] = lord_hero;
+        if lord_present {
+            self.heroes[lord_index] = lord_hero;
+        }
 
         return (heroes_alive, lord_save, update_target);
     }
@@ -748,6 +751,14 @@ impl Team {
             self.num_tricksters,
         );
     }
+
+    pub fn get_team_damage_dealt_total(&self) -> Vec<f64> {
+        let mut res: Vec<f64> = vec![];
+        for hero in &self.heroes {
+            res.push(hero.damage_dealt);
+        }
+        return res;
+    }
 }
 
 /// Create a team performing type validation and calculating certain fields
@@ -841,8 +852,8 @@ pub struct Hero {
     evasion_cap: f64,
     hemma_bonus: f64,
     // line 451
-    damage_taken: f64,
-    crit_damage_taken: f64,
+    damage_taken_when_hit: f64,
+    crit_damage_taken_when_hit: f64,
     damage_dealt: f64,
     // skills: Vec<Skill>,
 }
@@ -921,8 +932,8 @@ pub fn create_hero(
         ninja_evasion: 0.0,
         evasion_cap: 0.75,
         hemma_bonus: 0.0,
-        damage_taken: 0.0,
-        crit_damage_taken: 0.0,
+        damage_taken_when_hit: 0.0,
+        crit_damage_taken_when_hit: 0.0,
         damage_dealt: 0.0,
     };
 
