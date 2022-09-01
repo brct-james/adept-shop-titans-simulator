@@ -2,6 +2,7 @@ use super::dungeons::Dungeon;
 use super::heroes::Team;
 use super::simulations::{create_simulation, SimResult};
 
+use log::info;
 use serde::{Deserialize, Serialize};
 
 /// Defines instructions for running one or more Simulations
@@ -20,11 +21,12 @@ impl Trial {
     pub fn run_simulations_single_threaded(&mut self) {
         while self.results.len() < self.simulation_qty {
             print!("Running simulation iteration:  # {:#?}", self.results.len());
+            info!("Running simulation iteration: # {}", self.results.len());
             let encounter = self
                 .dungeon
                 .generate_encounter_from_dungeon(&self.difficulty_settings, self.force_minibosses)
                 .unwrap();
-            let mut simulation = create_simulation(&self.team, encounter, vec![]).unwrap();
+            let mut simulation = create_simulation(&self.team, encounter, vec![], false).unwrap();
             let sim_res = simulation.run().unwrap();
             print!(
                 "\rRunning simulation iteration: # {:#?} | Success: {:#?} in {:#?} rounds\n",

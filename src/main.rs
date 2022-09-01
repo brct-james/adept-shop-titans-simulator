@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 // use std::thread;
 // use std::time::Duration;
+use log::info;
+
+#[macro_use]
+extern crate fstrings;
 
 mod equipment;
 use crate::equipment::ElementType;
@@ -36,6 +40,13 @@ struct Study {
 }
 
 fn main() {
+    let mut i = 0;
+    while std::path::Path::new(&f!("target/logs/simulation_{}.log", i)).exists() {
+        // Create new log file each run
+        i += 1;
+    }
+    fast_log::init(fast_log::Config::new().file(&f!("target/logs/simulation_{}.log", i))).unwrap();
+    info!("Start of Log File");
     // println!("Hello, world!");
     // let hero = HeroTrial {
     //     class: Class::Knight,

@@ -6,16 +6,21 @@ use serde::{Deserialize, Serialize};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
+use log::info;
+
 /// A simulated encounter between a Team and a Dungeon
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Simulation {
     team: Team,
     encounter: Encounter,
     metrics: Vec<String>,
+    log_all: bool,
 }
 
 impl Simulation {
     pub fn run(&mut self) -> Result<SimResult, &'static str> {
+        info!("Start of Simulation");
+        let mut log_queue: Vec<String> = vec![];
         // If encounter.is_boss then ignore Mundra
         // Error if more heroes in team than encounter allows
 
@@ -77,6 +82,10 @@ impl Simulation {
 
         // Define heroes alive
         let mut heroes_alive = self.team.get_heroes_len();
+
+        log_queue.push("Ready to start quest with:".to_string());
+        log_queue.push(f!("{:#?}", self.encounter));
+        log_queue.push(f!("{:#?}", self.team));
 
         // START QUEST
         while cont_fight {
@@ -215,21 +224,33 @@ impl Simulation {
             encounter_hp_remaining: ehprem,
             encounter_max_hp: emaxhp,
         };
-
+        if self.log_all || !won_fight {
+            for item in log_queue {
+                info!("{}", item);
+            }
+        }
+        if won_fight {
+            info!("Won Simulation");
+        } else {
+            info!("Lost Simulation");
+        }
         return Ok(res);
     }
 }
 
 /// Create a simulation performing type validation and calculating certain fields
+/// If log_all is false simulation actions are only logged when the simulation fails, else all actions are logged
 pub fn create_simulation(
     team: &Team,
     encounter: Encounter,
     metrics: Vec<String>,
+    log_all: bool,
 ) -> Result<Simulation, &'static str> {
     let simulation = Simulation {
         team: team.clone(),
         encounter,
         metrics,
+        log_all,
     };
 
     return Ok(simulation);

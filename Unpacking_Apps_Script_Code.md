@@ -172,3 +172,5 @@ Hemma_bonus
 - Must convert to using getters and setters cause 795 private field errors is 795 too many
 
 - Must implement SimResult and aggregation in trials
+
+- IMplement logger for round-by-round actions for debugging (with some kind of toggle that can be passed for saving or not, or only saving if fail round)
