@@ -294,7 +294,12 @@ impl Team {
         return target_chance_heroes;
     }
 
-    pub fn update_ninja_bonus_and_extreme_crit_bonus(&mut self, round: i16, is_extreme: bool) {
+    pub fn update_ninja_bonus_and_extreme_crit_bonus(
+        &mut self,
+        round: i16,
+        is_extreme: bool,
+    ) -> Vec<String> {
+        let mut log_queue: Vec<String> = vec![];
         for hero in &mut self.heroes {
             if hero.class == "Sensei" && hero.lost_innate == round - 2 {
                 hero.ninja_bonus = 0.1 + f64::from(std::cmp::min(hero.innate_tier, 4)) * 0.1;
@@ -305,6 +310,12 @@ impl Team {
                 if hero.innate_tier == 4 {
                     hero.ninja_evasion = 0.25;
                 }
+                log_queue.push(f!(
+                    "Setting ninja_bonus to {} and ninja_evasion to {} for hero {}",
+                    hero.ninja_bonus,
+                    hero.ninja_evasion,
+                    hero.identifier
+                ));
             }
 
             hero.extreme_crit_bonus = 0.0;
@@ -314,8 +325,14 @@ impl Team {
             {
                 hero.extreme_crit_bonus = -25.0
                     * (hero.evasion + f64::from(hero.berserker_stage) * 0.1 + hero.ninja_evasion);
+                log_queue.push(f!(
+                    "Setting extreme_crit_bonus to {} for hero {}",
+                    hero.extreme_crit_bonus,
+                    hero.identifier
+                ));
             }
         }
+        return log_queue;
     }
 
     pub fn calculate_mob_attack(
@@ -329,20 +346,24 @@ impl Team {
         target_chance_heroes: [f64; 4],
         crit_chance: f64,
         crit_chance_modifier: f64,
-    ) -> (usize, bool, bool) {
+    ) -> (usize, bool, bool, Vec<String>) {
+        let mut log_queue: Vec<String> = vec![];
         let mut rng = thread_rng();
 
         let lord_present: bool;
         let lord_index: usize;
 
+        log_queue.push("Calculating Mob Attack".to_string());
         match self.get_class_index("Lord".to_string()) {
             Some(index) => {
                 lord_present = true;
                 lord_index = index;
+                log_queue.push(f!("Found Lord Alive in Team at {}", index));
             }
             _ => {
                 lord_present = false;
                 lord_index = 0;
+                log_queue.push("No Lord Found Alive in Team".to_string());
             }
         }
 
@@ -350,6 +371,7 @@ impl Team {
         lord_hero = self.heroes[lord_index].clone();
 
         if rng.gen::<f64>() < aoe_chance && heroes_alive > 1 {
+            log_queue.push("Mob Attempting AOE Attack".to_string());
             for hero in &mut self.heroes {
                 if hero.hp > 0.0 {
                     if hero.guaranteed_evade
@@ -361,47 +383,97 @@ impl Team {
                                 hero.evasion_cap,
                             )
                     {
+                        log_queue.push(f!("Hero {} evades AOE attack", hero.identifier));
+                        hero.dodges += 1;
                         if hero.class == "Dancer" || hero.class == "Acrobat" {
+                            log_queue.push(f!("Hero {} gains guaranteed crit", hero.identifier));
                             hero.guaranteed_crit = true;
                         }
                     } else {
-                        hero.hp -= (hero.damage_taken_when_hit * aoe_damage).ceil();
+                        let damage = (hero.damage_taken_when_hit * aoe_damage).ceil();
+                        log_queue.push(f!(
+                            "Hero {} is hit by AOE, takes damage {:.2}",
+                            hero.identifier,
+                            damage
+                        ));
+                        hero.hp -= damage;
                         if hero.hp <= 0.0 {
+                            log_queue.push(f!("Hero {} hp reduced to 0", hero.identifier));
                             if rng.gen::<f64>() >= hero.survive_chance {
                                 // Surviving Fatal Blow did not activate
+                                log_queue.push(f!(
+                                    "Hero {} did not survive fatal blow, checking for Lord save",
+                                    hero.identifier
+                                ));
                                 if lord_present
                                     && lord_save
                                     && hero.class != "Lord"
                                     && lord_hero.hp > 0.0
                                 {
                                     // Lord Saves
+                                    log_queue.push(f!("Hero {} saved by Lord", hero.identifier));
                                     lord_save = false;
                                     hero.hp += (hero.damage_taken_when_hit * aoe_damage).ceil();
                                     lord_hero.hp -=
                                         (lord_hero.damage_taken_when_hit * aoe_damage).ceil();
+                                    log_queue.push(f!(
+                                        "Hero {} now has HP of {:.2}, Lord {} now has HP of {:.2}",
+                                        hero.identifier,
+                                        hero.hp,
+                                        lord_hero.identifier,
+                                        lord_hero.hp
+                                    ));
                                     if lord_hero.hp <= 0.0 {
                                         // Lord Dies in Saving
+                                        log_queue.push(f!(
+                                            "Lord {} dies while saving hero {}",
+                                            lord_hero.identifier,
+                                            hero.identifier
+                                        ));
                                         if rng.gen::<f64>() >= lord_hero.survive_chance {
                                             // Surviving Fatal Blow did not activate
+                                            log_queue.push(f!(
+                                                "Lord {} did not survive fatal blow",
+                                                lord_hero.identifier
+                                            ));
                                             lord_hero.hp = 0.0;
                                             heroes_alive -= 1;
                                             update_target = true;
                                         } else {
                                             // Surviving Fatal Blow Activated
+                                            log_queue.push(f!(
+                                                "Lord {} survived fatal blow with 1 HP",
+                                                lord_hero.identifier
+                                            ));
                                             lord_hero.hp = 1.0;
                                             lord_hero.survive_chance = 0.0;
                                         }
                                     }
                                 } else {
-                                    // Surviving Fatal Blow Activated
-                                    hero.hp = 1.0;
-                                    hero.survive_chance = 0.0;
+                                    // lord doesnt save
+                                    log_queue.push(f!("Hero {} dies", hero.identifier));
+                                    hero.hp = 0.0;
+                                    heroes_alive -= 1;
+                                    update_target = true;
                                 }
+                            } else {
+                                // Surviving Fatal Blow Activated
+                                log_queue.push(f!(
+                                    "Hero {} survived fatal blow with 1 HP",
+                                    hero.identifier
+                                ));
+                                hero.hp = 1.0;
+                                hero.survive_chance = 0.0;
                             }
                         }
 
                         // Check if innate lost
+                        log_queue.push(f!("Checking if Hero {} is sensei and didn't already lose innate last round", hero.identifier));
                         if hero.class == "Sensei" && hero.lost_innate != round - 1 {
+                            log_queue.push(f!(
+                                "Hero {} is sensei and lost innate due to taking damage",
+                                hero.identifier
+                            ));
                             hero.lost_innate = round;
                         }
                     }
@@ -409,6 +481,7 @@ impl Team {
             }
         } else {
             // Mob attacks only one hero
+            log_queue.push("Mob Attempting Single Target Attack".to_string());
             let mut target = 0;
             let target_rng = rng.gen::<f64>();
             for i in (0..target_chance_heroes.len()).rev() {
@@ -420,6 +493,11 @@ impl Team {
             }
             // check hit/evade
             let hero = &mut self.heroes[target];
+            log_queue.push(f!(
+                "Mob is targeting hero at index {}: Hero {} ",
+                target,
+                hero.identifier
+            ));
             if hero.guaranteed_evade
                 || rng.gen::<f64>()
                     < f64::min(
@@ -427,54 +505,111 @@ impl Team {
                         hero.evasion_cap,
                     )
             {
+                log_queue.push(f!("Hero {} evades single target attack", hero.identifier));
+                hero.dodges += 1;
                 if hero.class == "Danger" || hero.class == "Acrobat" {
+                    log_queue.push(f!("Hero {} gains guaranteed crit", hero.identifier));
                     hero.guaranteed_crit = true;
                 }
             } else {
+                log_queue.push(f!(
+                    "Hero {} is hit by single target attack, checking for crit damage",
+                    hero.identifier
+                ));
                 // Hit, check crit
                 if rng.gen::<f64>() > crit_chance * crit_chance_modifier + hero.extreme_crit_bonus {
                     // not crit
                     hero.hp -= hero.damage_taken_when_hit;
+                    log_queue.push(f!(
+                        "Hero {} is hit with a NORMAL attack, takes {:.2} damage bringing hp to {:.2}",
+                        hero.identifier,
+                        hero.damage_taken_when_hit,
+                        hero.hp
+                    ));
                 } else {
                     hero.hp -= hero.crit_damage_taken_when_hit;
+                    hero.crits_taken += 1;
+                    log_queue.push(f!(
+                        "Hero {} is hit with a CRITICAL attack, takes {:.2} damage bringing hp to {:.2}",
+                        hero.identifier,
+                        hero.crit_damage_taken_when_hit,
+                        hero.hp
+                    ));
                 }
 
                 if hero.hp <= 0.0 {
+                    log_queue.push(f!("Hero {} hp reduced to 0", hero.identifier));
                     if rng.gen::<f64>() >= hero.survive_chance {
                         // surviving fatal blow did not activate
+                        log_queue.push(f!(
+                            "Hero {} did not survive fatal blow, checking for lord save",
+                            hero.identifier
+                        ));
                         if lord_present && lord_save && hero.class != "Lord" && lord_hero.hp > 0.0 {
                             // Lord Saves
+                            log_queue.push(f!("Hero {} is saved by lord", hero.identifier));
                             lord_save = false;
                             hero.hp += hero.damage_taken_when_hit;
                             lord_hero.hp -= lord_hero.damage_taken_when_hit;
+                            log_queue.push(f!(
+                                "Hero {} now has HP of {:.2}, Lord {} now has HP of {:.2}",
+                                hero.identifier,
+                                hero.hp,
+                                lord_hero.identifier,
+                                lord_hero.hp
+                            ));
                             if lord_hero.hp <= 0.0 {
                                 // lord dies in saving
+                                log_queue.push(f!(
+                                    "Lord {} dies while saving hero {}",
+                                    lord_hero.identifier,
+                                    hero.identifier
+                                ));
                                 if rng.gen::<f64>() >= lord_hero.survive_chance {
                                     // surviving fatal blow did not activate
+                                    log_queue.push(f!(
+                                        "Lord {} did not survive fatal blow",
+                                        lord_hero.identifier
+                                    ));
                                     lord_hero.hp = 0.0;
                                     heroes_alive -= 1;
                                     update_target = true;
                                 } else {
                                     // survive fatal blow
+                                    log_queue.push(f!(
+                                        "Lord {} survived fatal blow with 1 HP",
+                                        lord_hero.identifier
+                                    ));
                                     lord_hero.hp = 1.0;
                                     lord_hero.survive_chance = 0.0;
                                 }
                             }
                         } else {
                             // lord doesnt save
+                            log_queue.push(f!("Hero {} dies", hero.identifier));
                             hero.hp = 0.0;
                             heroes_alive -= 1;
                             update_target = true;
                         }
                     } else {
                         // surviving fatal blow activated
+                        log_queue
+                            .push(f!("Hero {} survived fatal blow with 1 HP", hero.identifier));
                         hero.hp = 1.0;
                         hero.survive_chance = 0.0;
                     }
                 }
 
                 // check sensei lost innate
+                log_queue.push(f!(
+                    "Checking if Hero {} is sensei and didn't already lose innate last round",
+                    hero.identifier
+                ));
                 if hero.class == "Sensei" && hero.lost_innate != round - 1 {
+                    log_queue.push(f!(
+                        "Hero {} is sensei and lost innate due to taking damage",
+                        hero.identifier
+                    ));
                     hero.lost_innate = round;
                 }
             }
@@ -483,36 +618,56 @@ impl Team {
         // Save lord_hero back to heroes
         if lord_present {
             self.heroes[lord_index] = lord_hero;
+            log_queue.push("(Meta-Info) Lord data saved back to team heroes list".to_string());
         }
 
-        return (heroes_alive, lord_save, update_target);
+        return (heroes_alive, lord_save, update_target, log_queue);
     }
 
     pub fn calculate_hemma_drain(
         &mut self,
-        champion: String,
         champion_innate_tier: u8,
         hemma_mult: f64,
         round: i16,
-    ) {
+    ) -> Vec<String> {
+        let mut log_queue: Vec<String> = vec![];
+        log_queue.push("Calculating Hemma Drain".to_string());
         let mut hemma_index = 0usize;
         match self.get_class_index("Hemma".to_string()) {
             Some(index) => hemma_index = index,
             _ => (),
         }
+        log_queue.push(f!(
+            "Hemma found at index {} and has hp {:.2}",
+            hemma_index,
+            self.heroes[hemma_index].hp
+        ));
 
-        if champion == "Hemma" && self.heroes[hemma_index].hp > 0.0 {
+        if self.heroes[hemma_index].hp > 0.0 {
+            log_queue.push("Hemma is alive".to_string());
             let mut hemma_hero = self.heroes[hemma_index].clone();
             for (i, hero) in self.heroes.iter_mut().enumerate() {
                 if i != hemma_index
                     && hero.hp > (0.11 - 0.01 * f64::from(champion_innate_tier)) * hero.hp_max
                 {
+                    log_queue.push(f!(
+                        "Hero {} is not hemma and has enough HP ({:.2}) to steal",
+                        hero.identifier,
+                        hero.hp
+                    ));
                     hemma_hero.hemma_bonus += hemma_hero.attack * hemma_mult;
                     hero.hp =
                         hero.hp - (0.11 - 0.01 * f64::from(champion_innate_tier)) * hero.hp_max;
                     if hero.class == "Sensei" && hero.lost_innate != round - 1 {
+                        log_queue.push(f!("Hero {} is sensei and loses innate", hero.identifier));
                         hero.lost_innate = round;
                     }
+                    log_queue.push(f!(
+                        "New hemma bonus is {}, new Hero {} HP is {:.2}",
+                        hemma_hero.hemma_bonus,
+                        hero.identifier,
+                        hero.hp
+                    ));
                 }
             }
             self.heroes[hemma_index] = hemma_hero;
@@ -524,13 +679,22 @@ impl Team {
                     + f64::from(std::cmp::min(champion_innate_tier - 3, 0)),
                 self.heroes[hemma_index].hp_max,
             );
+            log_queue.push(f!(
+                "(Meta-Info) Hemma Hero saved back to team heroes vector, and now has hp of {:.2}",
+                self.heroes[hemma_index].hp
+            ));
         }
+
+        return log_queue;
     }
 
-    pub fn calculate_berserker_ninja_samurai_round_effects(&mut self, round: i16) {
+    pub fn calculate_berserker_ninja_samurai_round_effects(&mut self, round: i16) -> Vec<String> {
+        let mut log_queue: Vec<String> = vec![];
+        log_queue.push("Calculating berserker, ninja, samurai round effects".to_string());
         for hero in &mut self.heroes {
             // Check Berserker Activation
             if hero.class == "Berserker" || hero.class == "Jarl" {
+                log_queue.push(f!("Hero {} is class {}", hero.identifier, hero.class));
                 if hero.hp >= hero.jarl_hp_stage_1 * hero.hp_max {
                     hero.berserker_stage = 0;
                 } else if hero.hp >= hero.jarl_hp_stage_2 * hero.hp_max {
@@ -540,25 +704,41 @@ impl Team {
                 } else if hero.hp > 0.0 {
                     hero.berserker_stage = 3;
                 }
+                log_queue.push(f!(
+                    "Hero {} now has berserker_stage of {}",
+                    hero.identifier,
+                    hero.berserker_stage
+                ));
             }
 
             // Ninja Check
             if hero.class == "Ninja" && hero.hp < hero.hp_max {
                 hero.ninja_bonus = 0.0;
                 hero.ninja_evasion = 0.0;
+                log_queue.push(f!(
+                    "Hero {} is ninja and loses bonus because hp < hp_max",
+                    hero.identifier
+                ));
             }
 
             if hero.class == "Sensei" && hero.lost_innate == round {
                 hero.ninja_bonus = 0.0;
                 hero.ninja_evasion = 0.0;
+                log_queue.push(f!(
+                    "Hero {} is sensei and loses bonus because they lost_innate this round",
+                    hero.identifier
+                ));
             }
 
             // Samurai Check
             if round == 1 && (hero.class == "Samurai" || hero.class == "Daimyo") {
                 hero.guaranteed_crit = true;
                 hero.guaranteed_evade = false;
+                log_queue.push(f!("Hero {} is class {} and gains guaranteed_crit while losing guaranteed_evade as round = 1", hero.identifier, hero.class));
             }
         }
+
+        return log_queue;
     }
 
     pub fn calculate_heroes_attack(
@@ -577,21 +757,33 @@ impl Team {
         barrier_hp_max: f64,
         encounter_hp_max: f64,
         barrier_type: Option<ElementType>,
-    ) -> (u8, f64, f64, f64, i32) {
+    ) -> (u8, f64, f64, f64, i32, Vec<String>) {
+        let mut log_queue: Vec<String> = vec![];
+        log_queue.push("Calculate Heroes Attack".to_string());
+
         let mut polonia_loot: u8 = 0;
         let mut rng = thread_rng();
 
+        log_queue.push(f!("Attack order is {:?}", attack_order));
         for i in 0..self.get_heroes_len() {
             let jj = attack_order[i];
             let hero = &mut self.heroes[jj];
 
+            log_queue.push(f!("Hero {} has hp of {:.2}", hero.identifier, hero.hp));
             if hero.hp > 0.0 {
+                log_queue.push(f!("Hero {} attempts to attack", hero.identifier));
                 if rng.gen::<f64>() > encounter_evasion {
                     // hit mob, check crit
+                    log_queue.push(f!("Hero {} hits mob, checking crit", hero.identifier));
                     if hero.guaranteed_crit
                         || rng.gen::<f64>() < hero.critical_chance + hero.ninja_bonus + rudo_bonus
                     {
                         // crit, if samurai variant ignore barrier else reduce damage by barrier mod
+                        hero.crits_dealt += 1;
+                        log_queue.push(f!(
+                            "Hero {} hits with a CRITICAL hit, calculating damage",
+                            hero.identifier
+                        ));
                         let mut damage = (hero.attack
                             * (hero.attack_modifier
                                 + 0.2 * f64::from(hero.mundra_qty)
@@ -605,16 +797,36 @@ impl Team {
                             + hero.hemma_bonus)
                             * (hero.critical_multiplier + hero.consecutive_crit_bonus);
                         if round != 1 || (hero.class != "Samurai" && hero.class != "Damiyo") {
+                            log_queue.push(f!(
+                                "Hero {} is class {} and round is 1 so pierce barrier if it exists",
+                                hero.identifier,
+                                hero.class
+                            ));
                             damage *= barrier_modifier;
                         }
                         encounter_hp -= damage;
                         hero.damage_dealt += damage;
+                        log_queue.push(f!(
+                            "Hero {} deals damage {:.2} to mob, bringing hp to {:.2}",
+                            hero.identifier,
+                            damage,
+                            encounter_hp
+                        ));
                         if hero.class == "Conquistador" {
                             hero.consecutive_crit_bonus =
                                 f64::min(hero.consecutive_crit_bonus + 0.25, 1.0);
+                            log_queue.push(f!(
+                                "Hero {} is conquistador, new consecutive crit bonus is {}",
+                                hero.identifier,
+                                hero.consecutive_crit_bonus
+                            ));
                         }
                     } else {
                         // not crit, deal damage
+                        log_queue.push(f!(
+                            "Hero {} misses crit, does NORMAL attack",
+                            hero.identifier
+                        ));
                         let damage = (hero.attack
                             * (hero.attack_modifier
                                 + 0.2 * f64::from(hero.mundra_qty)
@@ -629,28 +841,55 @@ impl Team {
                             * barrier_modifier;
                         encounter_hp -= damage;
                         hero.damage_dealt += damage;
+                        log_queue.push(f!(
+                            "Hero {} deals damage {:.2} to mob, bringing hp to {:.2}",
+                            hero.identifier,
+                            damage,
+                            encounter_hp
+                        ));
                         if hero.class == "Conquistador" {
                             hero.consecutive_crit_bonus = 0.0;
+                            log_queue.push(f!(
+                                "Hero {} is conquistador, consecutive crit bonus reset to 0",
+                                hero.identifier
+                            ));
                         }
                         if count_loot {
                             if rng.gen::<f64>() < loot_chance {
                                 polonia_loot += 1;
                             }
+                            log_queue.push(f!("Polonia loot is now {}", polonia_loot));
                         }
 
                         // Damage Barrier
+                        log_queue.push(f!(
+                            "Checking for barrier (type: {:#?}) damage",
+                            barrier_type
+                        ));
                         match barrier_type {
                             Some(barrier_element) => {
                                 if barrier_hp > 0.0 && barrier_element == hero.element_type {
                                     barrier_hp -= f64::from(hero.element_qty);
+                                    log_queue.push(f!(
+                                        "Hero Matches Element Type, New Barrier HP is {:.2}",
+                                        barrier_hp
+                                    ));
                                 } else if barrier_hp > 0.0 && hero.element_type == ElementType::Any
                                 {
                                     barrier_hp -= f64::from(hero.element_qty) * 0.3;
+                                    log_queue.push(f!(
+                                        "Hero Has Any Element Type, New Barrier HP is {:.2}",
+                                        barrier_hp
+                                    ));
                                 }
                             }
                             _ => (),
                         }
                     }
+                } else {
+                    // Missed
+                    hero.attacks_missed += 1;
+                    log_queue.push(f!("Hero {} missed attack", hero.identifier));
                 }
             }
 
@@ -663,9 +902,11 @@ impl Team {
             } else if barrier_hp <= 0.75 * barrier_hp_max {
                 barrier_modifier = 0.4;
             }
+            log_queue.push(f!("Barrier Modifier is now {}", barrier_modifier));
 
             if encounter_hp < encounter_hp_max / 2.0 {
                 shark_active = 1;
+                log_queue.push("Mob now below 50% HP, Shark Activating".to_string());
             }
 
             hero.guaranteed_crit = false;
@@ -677,24 +918,55 @@ impl Team {
             barrier_hp,
             encounter_hp,
             shark_active,
+            log_queue,
         );
     }
 
-    pub fn calculate_healing(&mut self, champion: String, champion_innate_tier: u8) {
+    pub fn calculate_healing(&mut self, champion: String, champion_innate_tier: u8) -> Vec<String> {
+        let mut log_queue: Vec<String> = vec![];
+        log_queue.push("Calculating Healing".to_string());
         for hero in &mut self.heroes {
             if hero.hp > 0.0 {
+                log_queue.push(f!(
+                    "Hero {} is alive, hp is {:.2}",
+                    hero.identifier,
+                    hero.hp
+                ));
+                let before_hp = hero.hp;
+                let mut running_hp = hero.hp;
+
                 hero.hp = f64::min(hero.hp + f64::from(hero.lizard_qty * 3), hero.hp_max);
+                if hero.hp != running_hp {
+                    log_queue.push(f!(
+                        "Hero {} is healed by Lizard spirits for {:.2}",
+                        hero.identifier,
+                        hero.hp - running_hp
+                    ));
+                    running_hp = hero.hp;
+                }
                 if hero.class == "Cleric" {
                     hero.hp = f64::min(
                         hero.hp + f64::from(std::cmp::min(hero.innate_tier, 3) * 5 - 5),
                         hero.hp_max,
                     );
+                    log_queue.push(f!(
+                        "Hero {} is healed by being a Cleric for {:.2}",
+                        hero.identifier,
+                        hero.hp - running_hp
+                    ));
+                    running_hp = hero.hp;
                 } else if hero.class == "Bishop" {
                     if hero.innate_tier == 2 {
                         hero.hp = f64::min(hero.hp + 5.0, hero.hp_max);
                     } else if hero.innate_tier >= 3 {
                         hero.hp = f64::min(hero.hp + 20.0, hero.hp_max);
                     }
+                    log_queue.push(f!(
+                        "Hero {} is healed by being a Bishop for {:.2}",
+                        hero.identifier,
+                        hero.hp - running_hp
+                    ));
+                    running_hp = hero.hp;
                 }
 
                 if champion == "Lilu" {
@@ -705,12 +977,27 @@ impl Team {
                         4 => hero.hp = f64::min(hero.hp + 20.0, hero.hp_max),
                         _ => (),
                     }
+                    log_queue.push(f!(
+                        "Hero {} is healed by Lilu for {:.2}",
+                        hero.identifier,
+                        hero.hp - running_hp
+                    ));
+                    // running_hp = hero.hp;
                 }
+                log_queue.push(f!(
+                    "Hero {} has new hp of {:.2}, healed for {:.2} total",
+                    hero.identifier,
+                    hero.hp,
+                    hero.hp - before_hp
+                ));
             }
         }
+        return log_queue;
     }
 
-    pub fn check_berserker_activation(&mut self) {
+    pub fn check_berserker_activation(&mut self) -> Vec<String> {
+        let mut log_queue: Vec<String> = vec![];
+        log_queue.push("Checking Berserker Activation".to_string());
         for hero in &mut self.heroes {
             if hero.class == "Berserker" || hero.class == "Jarl" {
                 if hero.hp >= hero.jarl_hp_stage_1 * hero.hp_max {
@@ -722,12 +1009,53 @@ impl Team {
                 } else if hero.hp > 0.0 {
                     hero.berserker_stage = 3;
                 }
+                log_queue.push(f!(
+                    "Hero {} is class {} and new berserker stage is {}",
+                    hero.identifier,
+                    hero.class,
+                    hero.berserker_stage
+                ));
             }
         }
+        return log_queue;
     }
 
     pub fn get_heroes_len(&self) -> usize {
         return self.heroes.len();
+    }
+
+    pub fn get_heroes_hp_as_strings(&self) -> StringVec {
+        let mut res = StringVec(vec![]);
+        for hero in &self.heroes {
+            res.push(f!(
+                "{}: {:.2} ({:.2}%)",
+                hero.identifier,
+                hero.hp,
+                hero.hp / hero.hp_max * 100.0
+            ));
+        }
+        return res;
+    }
+
+    pub fn get_heroes_hp(&self) -> Vec<f64> {
+        let mut res: Vec<f64> = vec![];
+        for hero in &self.heroes {
+            res.push(hero.hp);
+        }
+        return res;
+    }
+
+    pub fn get_heroes_accuracy_stats(&self) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
+        let mut res: (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = (vec![], vec![], vec![], vec![]);
+
+        for hero in &self.heroes {
+            res.0.push(hero.crits_taken);
+            res.1.push(hero.crits_dealt);
+            res.2.push(hero.dodges);
+            res.3.push(hero.attacks_missed);
+        }
+
+        return res;
     }
 
     pub fn get_class_index(&self, class_name: String) -> Option<usize> {
@@ -856,6 +1184,11 @@ pub struct Hero {
     crit_damage_taken_when_hit: f64,
     damage_dealt: f64,
     // skills: Vec<Skill>,
+    // accuracy_tracking
+    crits_taken: u8,
+    crits_dealt: u8,
+    dodges: u8,
+    attacks_missed: u8,
 }
 
 impl Hero {
@@ -935,6 +1268,10 @@ pub fn create_hero(
         damage_taken_when_hit: 0.0,
         crit_damage_taken_when_hit: 0.0,
         damage_dealt: 0.0,
+        crits_taken: 0,
+        crits_dealt: 0,
+        dodges: 0,
+        attacks_missed: 0,
     };
 
     hero.attack /= hero.attack_modifier;
@@ -953,4 +1290,26 @@ pub fn create_hero(
     }
 
     return Ok(hero);
+}
+
+pub struct StringVec(Vec<String>);
+
+impl StringVec {
+    fn push(&mut self, new_entry: String) {
+        self.0.push(new_entry);
+    }
+}
+
+impl std::fmt::Display for StringVec {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        let mut comma_separated = String::new();
+
+        for num in &self.0[0..self.0.len() - 1] {
+            comma_separated.push_str(&num.to_string());
+            comma_separated.push_str(", ");
+        }
+
+        comma_separated.push_str(&self.0[self.0.len() - 1].to_string());
+        write!(f, "[{}]", comma_separated)
+    }
 }

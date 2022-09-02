@@ -41,11 +41,11 @@ struct Study {
 
 fn main() {
     let mut i = 0;
-    while std::path::Path::new(&f!("target/logs/simulation_{}.log", i)).exists() {
+    while std::path::Path::new(&f!("target/logs/trial_{}.log", i)).exists() {
         // Create new log file each run
         i += 1;
     }
-    fast_log::init(fast_log::Config::new().file(&f!("target/logs/simulation_{}.log", i))).unwrap();
+    fast_log::init(fast_log::Config::new().file(&f!("target/logs/trial_{}.log", i))).unwrap();
     info!("Start of Log File");
     // println!("Hello, world!");
     // let hero = HeroTrial {
@@ -163,10 +163,24 @@ fn main() {
     // 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
     // 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
 
-    let mut trial =
-        create_trial("".to_string(), 5000, team, dungeon, vec![1], Some(false)).unwrap();
+    let mut trial = create_trial(
+        "debugging".to_string(),
+        10,
+        team,
+        dungeon,
+        vec![1],
+        Some(false),
+        true,
+    )
+    .unwrap();
 
     trial.run_simulations_single_threaded();
+
+    let trial_csv_path = f!("target/csvs/trial_{}.csv", i);
+    if let Some(p) = std::path::Path::new(&trial_csv_path).parent() {
+        std::fs::create_dir_all(p).unwrap();
+    }
+    trial.save_results_to_csv(trial_csv_path).unwrap();
 
     let res = trial.get_results_unranked();
 
@@ -205,8 +219,19 @@ fn main() {
         avg_dmg_dealt_0,
         avg_encounter_hp_remaining,
     );
+    info!(
+        "Completed. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+        successes,
+        res.len(),
+        successes as f64 / res.len() as f64 * 100.0,
+        min_rounds,
+        avg_rounds,
+        max_rounds,
+        avg_dmg_dealt_0,
+        avg_encounter_hp_remaining,
+    );
 
-    res[0].print_team();
-    res[0].print_encounter();
+    // res[0].print_team();
+    // res[0].print_encounter();
     // println!("Example: {:#?} {:#?}", res[0].is_success(), res[0])
 }

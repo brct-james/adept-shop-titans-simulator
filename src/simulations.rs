@@ -19,8 +19,8 @@ pub struct Simulation {
 
 impl Simulation {
     pub fn run(&mut self) -> Result<SimResult, &'static str> {
-        info!("Start of Simulation");
         let mut log_queue: Vec<String> = vec![];
+        log_queue.push("Start of Simulation".to_string());
         // If encounter.is_boss then ignore Mundra
         // Error if more heroes in team than encounter allows
 
@@ -90,22 +90,35 @@ impl Simulation {
         // START QUEST
         while cont_fight {
             round += 1;
+            let heroes_hp_strings = self.team.get_heroes_hp_as_strings();
+            let (temp_ehp, temp_mehp) = self.encounter.get_hp_info();
+            log_queue.push(f!(
+                "\n\n--Round #{:#?}--\nEncounter HP: {:.2} ({:.2}%)  Heroes HP: {}\n",
+                round,
+                temp_ehp,
+                temp_ehp / temp_mehp * 100.0,
+                heroes_hp_strings
+            ));
 
             if update_target {
                 target_chance_heroes = self.team.calculate_targeting_chances();
                 update_target = false;
             }
+            log_queue.push(f!("Team Target Chances: {:?}", target_chance_heroes));
 
             // Check for sensei bonus and extreme crit bonus
-            self.team
+            log_queue.push("Updating Ninja Bonus and Extreme Crit Bonus for Team".to_string());
+            let update_ninja_extreme_bonuses_logs = self
+                .team
                 .update_ninja_bonus_and_extreme_crit_bonus(round, is_extreme);
+            log_queue.extend(update_ninja_extreme_bonuses_logs);
 
             // Mob Attacks
 
             // Mob AOE
             let (aoe_chance, aoe_damage) = self.encounter.get_aoe_info();
             let (crit_chance, crit_chance_modifier) = self.encounter.get_crit_info();
-            let (temp1, temp2, temp3) = self.team.calculate_mob_attack(
+            let (temp1, temp2, temp3, temp4) = self.team.calculate_mob_attack(
                 aoe_chance,
                 aoe_damage,
                 heroes_alive,
@@ -119,44 +132,55 @@ impl Simulation {
             heroes_alive = temp1;
             lord_save = temp2;
             update_target = temp3;
+            log_queue.extend(temp4);
 
-            self.team.calculate_hemma_drain(
-                champion.clone(),
-                champion_innate_tier,
-                hemma_mult,
-                round,
-            );
+            if champion == "Hemma" {
+                let hemma_log_queue =
+                    self.team
+                        .calculate_hemma_drain(champion_innate_tier, hemma_mult, round);
+                log_queue.extend(hemma_log_queue);
+            }
 
-            self.team
+            let bnsroundeffects_log_queue = self
+                .team
                 .calculate_berserker_ninja_samurai_round_effects(round);
+            log_queue.extend(bnsroundeffects_log_queue);
 
             // Heroes Attack
             let (barrier_hp, barrier_hp_max, barrier_modifier, barrier_type) =
                 self.encounter.get_barrier_info();
             let encounter_evasion = self.encounter.get_evasion();
             let (encounter_hp, encounter_hp_max) = self.encounter.get_hp_info();
-            let (polonia_loot, barrier_modifier, barrier_hp, encounter_hp, temp1) =
-                self.team.calculate_heroes_attack(
-                    attack_order.clone(),
-                    round,
-                    rudo_bonus,
-                    shark_active,
-                    dinosaur_active,
-                    barrier_modifier,
-                    count_loot,
-                    loot_chance,
-                    encounter_evasion,
-                    encounter_hp,
-                    barrier_hp,
-                    barrier_hp_max,
-                    encounter_hp_max,
-                    barrier_type,
-                );
+            let (
+                polonia_loot,
+                barrier_modifier,
+                barrier_hp,
+                encounter_hp,
+                temp1,
+                hero_attack_log_queue,
+            ) = self.team.calculate_heroes_attack(
+                attack_order.clone(),
+                round,
+                rudo_bonus,
+                shark_active,
+                dinosaur_active,
+                barrier_modifier,
+                count_loot,
+                loot_chance,
+                encounter_evasion,
+                encounter_hp,
+                barrier_hp,
+                barrier_hp_max,
+                encounter_hp_max,
+                barrier_type,
+            );
             shark_active = temp1;
+            log_queue.extend(hero_attack_log_queue);
 
             self.encounter
                 .set_barrier_hp_and_modifier(barrier_hp, barrier_modifier);
             self.encounter.set_hp(encounter_hp);
+            log_queue.push("(Meta-Info) Barrier HP, Modifier and Encounter HP have been applied back to their objects".to_string());
 
             dinosaur_active = 0;
 
@@ -164,11 +188,13 @@ impl Simulation {
             if encounter_hp <= 0.0 {
                 cont_fight = false;
                 won_fight = true;
+                log_queue.push("Mob reduced to 0 HP".to_string());
             }
 
             // Check lost
             if heroes_alive == 0 {
                 cont_fight = false;
+                log_queue.push("No heroes remain alive".to_string());
             }
 
             // Calculate polonia loot
@@ -177,6 +203,11 @@ impl Simulation {
                 if polonia_loot >= polonia_loot_cap {
                     polonia_loot_cap_hit += 1;
                 }
+                log_queue.push(f!(
+                    "Polonia loot received {} of {}",
+                    polonia_loot,
+                    polonia_loot_cap
+                ));
             }
 
             if champion_innate_tier == 1 && round == 2 {
@@ -188,19 +219,31 @@ impl Simulation {
             if champion_innate_tier == 4 && round == 4 {
                 rudo_bonus = 0.0;
             }
+            if champion == "Rudo" {
+                log_queue.push(f!(
+                    "Round is {}, Rudo bonus to break chance is: {}",
+                    round,
+                    rudo_bonus
+                ));
+            }
 
             // Healing from Lizard, Cleric, and Lilo
             if cont_fight {
-                self.team
+                let healing_log_queue = self
+                    .team
                     .calculate_healing(champion.clone(), champion_innate_tier);
+                log_queue.extend(healing_log_queue);
             }
 
             // Check Berserker Activation
-            self.team.check_berserker_activation();
+            let berserker_log_queue = self.team.check_berserker_activation();
+            log_queue.extend(berserker_log_queue);
         }
 
         // TODO If key in metrics then add else skip
         let (ehprem, emaxhp) = self.encounter.get_hp_info();
+        let (team_crits_taken, team_crits_dealt, team_dodges, team_attacks_missed) =
+            self.team.get_heroes_accuracy_stats();
         let res = SimResult {
             success: won_fight,
             rounds_elapsed: round,
@@ -223,16 +266,22 @@ impl Simulation {
             polonia_loot_cap_hit,
             encounter_hp_remaining: ehprem,
             encounter_max_hp: emaxhp,
+            team_crits_taken,
+            team_crits_dealt,
+            team_dodges,
+            team_attacks_missed,
         };
+
+        if won_fight {
+            log_queue.push("Won Simulation".to_string());
+        } else {
+            log_queue.push("Lost Simulation".to_string());
+        }
+
         if self.log_all || !won_fight {
             for item in log_queue {
                 info!("{}", item);
             }
-        }
-        if won_fight {
-            info!("Won Simulation");
-        } else {
-            info!("Lost Simulation");
         }
         return Ok(res);
     }
@@ -282,6 +331,11 @@ pub struct SimResult {
     polonia_loot_cap_hit: i32,
     encounter_hp_remaining: f64,
     encounter_max_hp: f64,
+    // team accuracy stats
+    team_crits_taken: Vec<u8>,
+    team_crits_dealt: Vec<u8>,
+    team_dodges: Vec<u8>,
+    team_attacks_missed: Vec<u8>,
 }
 
 impl SimResult {
@@ -293,14 +347,15 @@ impl SimResult {
         return self.rounds_elapsed;
     }
 
-    pub fn print_team(&self) {
-        println!("{:#?}", self.team);
-    }
+    // pub fn print_team(&self) {
+    //     println!("{:#?}", self.team);
+    // }
 
-    pub fn print_encounter(&self) {
-        println!("{:#?}", self.encounter);
-    }
+    // pub fn print_encounter(&self) {
+    //     println!("{:#?}", self.encounter);
+    // }
 
+    // Todo: Deprecate
     pub fn get_damage_dealt_during_fight(&self) -> Vec<f64> {
         return self.damage_dealt_during_fight.clone();
     }
@@ -308,4 +363,43 @@ impl SimResult {
     pub fn get_encounter_hp_remaining(&self) -> f64 {
         return self.encounter_hp_remaining;
     }
+
+    pub fn get_team_hp_remaining(&self) -> [f64; 5] {
+        return convert_vec_to_max_team_sized_array(self.team.get_heroes_hp());
+    }
+
+    pub fn get_team_damage_dealt(&self) -> [f64; 5] {
+        return convert_vec_to_max_team_sized_array(self.get_damage_dealt_during_fight());
+    }
+
+    pub fn get_team_crits_taken(&self) -> [u8; 5] {
+        return convert_vec_to_max_team_sized_array(self.team.get_heroes_accuracy_stats().0);
+    }
+
+    pub fn get_team_crits_dealt(&self) -> [u8; 5] {
+        return convert_vec_to_max_team_sized_array(self.team.get_heroes_accuracy_stats().1);
+    }
+
+    pub fn get_team_dodges(&self) -> [u8; 5] {
+        return convert_vec_to_max_team_sized_array(self.team.get_heroes_accuracy_stats().2);
+    }
+
+    pub fn get_team_attacks_missed(&self) -> [u8; 5] {
+        return convert_vec_to_max_team_sized_array(self.team.get_heroes_accuracy_stats().3);
+    }
+}
+
+/// input_vector is converted to an array sized to match the max team size.
+/// Excess values are truncated
+fn convert_vec_to_max_team_sized_array<T: Default + Clone>(input_vector: Vec<T>) -> [T; 5] {
+    let mut res_array: [T; 5] = Default::default();
+    for i in 0..res_array.len() {
+        if i >= input_vector.len() {
+            // ran out of input values, initialize rest as 0s
+            res_array[i] = T::default();
+        } else {
+            res_array[i] = input_vector[i].clone();
+        }
+    }
+    return res_array;
 }
