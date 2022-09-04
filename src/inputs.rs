@@ -161,7 +161,7 @@ pub struct DungeonInput {
     aoe_chance: [f64; 4],
     minimum_power: [u32; 4],
     barrier_types: [String; 3],
-    barrier_health: f64,
+    barrier_healths: [f64; 4],
     boss_hp: [f64; 4],
     boss_damage: [f64; 4],
     boss_defense_cap: [f64; 4],
@@ -169,7 +169,7 @@ pub struct DungeonInput {
     boss_aoe_chance: [f64; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: String,
-    boss_barrier_health: f64,
+    boss_barrier_healths: [f64; 4],
 }
 
 impl DungeonInput {
@@ -180,14 +180,14 @@ impl DungeonInput {
         di2.defense_cap = _round_array_of_len_4_to_2(di2.defense_cap);
         di2.aoe_damage = _round_array_of_len_4_to_2(di2.aoe_damage);
         di2.aoe_chance = _round_array_of_len_4_to_2(di2.aoe_chance);
-        di2.barrier_health = round_to_2(di2.barrier_health);
+        di2.barrier_healths = _round_array_of_len_4_to_2(di2.barrier_healths);
 
         di2.boss_hp = _round_array_of_len_4_to_2(di2.boss_hp);
         di2.boss_damage = _round_array_of_len_4_to_2(di2.boss_damage);
         di2.boss_defense_cap = _round_array_of_len_4_to_2(di2.boss_defense_cap);
         di2.boss_aoe_damage = _round_array_of_len_4_to_2(di2.boss_aoe_damage);
         di2.boss_aoe_chance = _round_array_of_len_4_to_2(di2.boss_aoe_chance);
-        di2.boss_barrier_health = round_to_2(di2.boss_barrier_health);
+        di2.boss_barrier_healths = _round_array_of_len_4_to_2(di2.boss_barrier_healths);
 
         return di2;
     }
@@ -212,7 +212,7 @@ impl From<DungeonInput> for Dungeon {
             item.aoe_chance,
             item.minimum_power,
             barrier_types,
-            item.barrier_health,
+            item.barrier_healths,
             item.boss_hp,
             item.boss_damage,
             item.boss_defense_cap,
@@ -220,7 +220,7 @@ impl From<DungeonInput> for Dungeon {
             item.boss_aoe_chance,
             item.boss_minimum_power,
             boss_barrier_type,
-            item.boss_barrier_health,
+            item.boss_barrier_healths,
         )
         .unwrap();
     }
@@ -236,7 +236,7 @@ pub fn create_dungeon_input(
     aoe_chance: [f64; 4],
     minimum_power: [u32; 4],
     barrier_types: [String; 3],
-    barrier_health: f64,
+    barrier_healths: [f64; 4],
     boss_hp: [f64; 4],
     boss_damage: [f64; 4],
     boss_defense_cap: [f64; 4],
@@ -244,7 +244,7 @@ pub fn create_dungeon_input(
     boss_aoe_chance: [f64; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: String,
-    boss_barrier_health: f64,
+    boss_barrier_healths: [f64; 4],
 ) -> DungeonInput {
     return DungeonInput {
         zone,
@@ -256,7 +256,7 @@ pub fn create_dungeon_input(
         aoe_chance,
         minimum_power,
         barrier_types,
-        barrier_health,
+        barrier_healths,
         boss_hp,
         boss_damage,
         boss_defense_cap,
@@ -264,7 +264,7 @@ pub fn create_dungeon_input(
         boss_aoe_chance,
         boss_minimum_power,
         boss_barrier_type,
-        boss_barrier_health,
+        boss_barrier_healths,
     };
 }
 

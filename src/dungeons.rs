@@ -216,7 +216,7 @@ pub struct Dungeon {
 
     // Extreme Only
     barrier_types: [ElementType; 3],
-    barrier_health: f64,
+    barrier_healths: [f64; 4],
 
     // Bosses
     boss_hp: [f64; 4],
@@ -226,7 +226,7 @@ pub struct Dungeon {
     boss_aoe_chance: [f64; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: ElementType,
-    boss_barrier_health: f64,
+    boss_barrier_healths: [f64; 4],
 }
 
 impl Dungeon {
@@ -291,11 +291,7 @@ impl Dungeon {
                 } else {
                     None
                 },
-                if sel_diff == 4 {
-                    self.barrier_health
-                } else {
-                    0.0
-                },
+                self.barrier_healths[sel_diff],
                 self.max_num_heroes,
             )
             .unwrap();
@@ -319,7 +315,7 @@ impl Dungeon {
                 } else {
                     None
                 },
-                self.boss_barrier_health,
+                self.boss_barrier_healths[sel_diff],
                 self.max_num_heroes,
             )
             .unwrap();
@@ -350,7 +346,7 @@ impl From<Dungeon> for DungeonInput {
             item.aoe_chance,
             item.minimum_power,
             barrier_types,
-            item.barrier_health,
+            item.barrier_healths,
             item.boss_hp,
             item.boss_damage,
             item.boss_defense_cap,
@@ -358,7 +354,7 @@ impl From<Dungeon> for DungeonInput {
             item.boss_aoe_chance,
             item.boss_minimum_power,
             boss_barrier_type,
-            item.boss_barrier_health,
+            item.boss_barrier_healths,
         );
     }
 }
@@ -374,7 +370,7 @@ pub fn create_dungeon(
     aoe_chance: [f64; 4],
     minimum_power: [u32; 4],
     barrier_types: [ElementType; 3],
-    barrier_health: f64,
+    barrier_healths: [f64; 4],
     boss_hp: [f64; 4],
     boss_damage: [f64; 4],
     boss_defense_cap: [f64; 4],
@@ -382,7 +378,7 @@ pub fn create_dungeon(
     boss_aoe_chance: [f64; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: ElementType,
-    boss_barrier_health: f64,
+    boss_barrier_healths: [f64; 4],
 ) -> Result<Dungeon, &'static str> {
     let dungeon = Dungeon {
         zone,
@@ -394,7 +390,7 @@ pub fn create_dungeon(
         aoe_chance,
         minimum_power,
         barrier_types,
-        barrier_health,
+        barrier_healths,
         boss_hp,
         boss_damage,
         boss_defense_cap,
@@ -402,7 +398,7 @@ pub fn create_dungeon(
         boss_aoe_chance,
         boss_minimum_power,
         boss_barrier_type,
-        boss_barrier_health,
+        boss_barrier_healths,
     };
 
     return Ok(dungeon);
