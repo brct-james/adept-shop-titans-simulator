@@ -165,7 +165,7 @@ fn main() {
 
     let mut trial = create_trial(
         "debugging".to_string(),
-        10,
+        1000,
         team,
         dungeon,
         vec![1],

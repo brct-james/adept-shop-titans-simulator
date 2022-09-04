@@ -787,10 +787,11 @@ impl Team {
                         let mut damage = (hero.attack
                             * (hero.attack_modifier
                                 + 0.2 * f64::from(hero.mundra_qty)
-                                + f64::from(shark_active) * 0.01 * f64::from(hero.shark_qty)
+                                + f64::from(shark_active) * 0.01 * f64::from(hero.shark_qty) * 20.0
                                 + f64::from(dinosaur_active)
                                     * f64::from(hero.dinosaur_qty)
                                     * 0.01
+                                    * 25.0
                                 + 0.1
                                     * f64::from(1 + hero.berserker_level)
                                     * f64::from(hero.berserker_stage))
@@ -830,10 +831,11 @@ impl Team {
                         let damage = (hero.attack
                             * (hero.attack_modifier
                                 + 0.2 * f64::from(hero.mundra_qty)
-                                + f64::from(shark_active) * 0.01 * f64::from(hero.shark_qty)
+                                + f64::from(shark_active) * 0.01 * f64::from(hero.shark_qty) * 20.0
                                 + f64::from(dinosaur_active)
                                     * f64::from(hero.dinosaur_qty)
                                     * 0.01
+                                    * 25.0
                                 + 0.1
                                     * f64::from(1 + hero.berserker_level)
                                     * f64::from(hero.berserker_stage))
@@ -1194,10 +1196,10 @@ pub struct Hero {
 impl Hero {
     fn modify_for_extreme_encounter(&mut self) {
         self.evasion -= 0.2;
-        self.extreme_crit_bonus = 1.0;
     }
     fn modify_for_boss_encounter(&mut self) {
-        self.defense *= self.defense_modifier + 0.2 * f64::from(self.mundra_qty);
+        self.defense = (self.defense / self.defense_modifier)
+            * (self.defense_modifier + 0.2 * f64::from(self.mundra_qty));
     }
 }
 
@@ -1226,6 +1228,8 @@ pub fn create_hero(
     attack_modifier: u16,
     defense_modifier: u16,
 ) -> Result<Hero, &'static str> {
+    let atk_mod = 1.0 + f64::from(attack_modifier) / 100.0;
+    let def_mod = 1.0 + f64::from(defense_modifier) / 100.0;
     let mut hero = Hero {
         identifier,
         class,
@@ -1235,7 +1239,7 @@ pub fn create_hero(
         innate_tier,
         hp,
         hp_max: hp,
-        attack: f64::from(attack),
+        attack: f64::from(attack) / atk_mod,
         defense: f64::from(defense),
         threat,
         critical_chance: f64::from(critical_chance) / 100.0,
@@ -1248,9 +1252,9 @@ pub fn create_hero(
         shark_qty,
         dinosaur_qty,
         mundra_qty,
-        attack_modifier: 1.0 + f64::from(attack_modifier) / 100.0,
-        defense_modifier: 1.0 + f64::from(defense_modifier) / 100.0,
-        extreme_crit_bonus: 0.0,
+        attack_modifier: atk_mod,
+        defense_modifier: def_mod,
+        extreme_crit_bonus: 1.0,
         survive_chance: 0.0,
         guaranteed_crit: false,
         guaranteed_evade: false,
@@ -1273,9 +1277,6 @@ pub fn create_hero(
         dodges: 0,
         attacks_missed: 0,
     };
-
-    hero.attack /= hero.attack_modifier;
-    hero.defense /= hero.defense_modifier;
 
     if hero.rank == 4 {
         hero.jarl_hp_stage_1 = 0.8;

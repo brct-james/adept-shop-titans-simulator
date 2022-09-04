@@ -169,8 +169,15 @@ Hemma_bonus
 ### Notes/TODO:
 - I think the spreadsheet doesn't use spirit qty but rather the actual value of the spirits (e.g. lizard gives +3hp so for qty 1 the spreadsheet would actually be 3 lizard...) Double check and then modify as appropriate
 
-- Must convert to using getters and setters cause 795 private field errors is 795 too many
+- - Armadillo is 15 per 1, lizard is 3 per 1, shark is 20 per 1, dinosaur is 25 per 1, mundras ins 1 per 1
 
 - Must implement SimResult and aggregation in trials
 
 - IMplement logger for round-by-round actions for debugging (with some kind of toggle that can be passed for saving or not, or only saving if fail round)
+
+- Some way to manually specify which if any miniboss should be spawned
+
+- Optimizations
+
+### Questions for Ress:
+Line 173-174: Is the mundra bonus only meant to be applied during boss fight? - oh wait mundra = 0 if not boss

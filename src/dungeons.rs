@@ -127,7 +127,7 @@ pub fn create_encounter(
     let mut crit_chance_modifier = 1.0;
     let crit_chance = 0.1;
     let barrier_modifier = 0.2;
-    let aoe_damage = f64::from(aoe_damage_base) / f64::from(damage);
+    let aoe_damage = aoe_damage_base / damage;
 
     match mini_boss {
         Some(mb) => match mb {
