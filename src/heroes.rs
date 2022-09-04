@@ -1,4 +1,12 @@
-use super::equipment::{BoosterType, ElementType};
+use crate::{
+    decimals::round_to_2,
+    inputs::{create_hero_input, HeroInput},
+};
+
+use std::str::FromStr;
+use std::string::ToString;
+
+use crate::equipment::{BoosterType, ElementType};
 
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
@@ -26,6 +34,16 @@ pub enum HeroArchetype {
 }
 
 impl Team {
+    pub fn round_floats_for_display(&self) -> Team {
+        let mut t2 = self.clone();
+        let mut heroes: Vec<Hero> = vec![];
+        for hero in &t2.heroes {
+            heroes.push(hero.round_floats_for_display());
+        }
+        t2.heroes = heroes;
+        return t2;
+    }
+
     pub fn normalize_percents(&mut self, is_extreme: bool, is_boss: bool) {
         for hero in &mut self.heroes {
             if is_extreme {
@@ -787,7 +805,10 @@ impl Team {
                         let mut damage = (hero.attack
                             * (hero.attack_modifier
                                 + 0.2 * f64::from(hero.mundra_qty)
-                                + f64::from(shark_active) * 0.01 * f64::from(hero.shark_qty) * 20.0
+                                + f64::from(shark_active)
+                                    * 0.01
+                                    * f64::from(hero.shark_qty)
+                                    * 20.0
                                 + f64::from(dinosaur_active)
                                     * f64::from(hero.dinosaur_qty)
                                     * 0.01
@@ -831,7 +852,10 @@ impl Team {
                         let damage = (hero.attack
                             * (hero.attack_modifier
                                 + 0.2 * f64::from(hero.mundra_qty)
-                                + f64::from(shark_active) * 0.01 * f64::from(hero.shark_qty) * 20.0
+                                + f64::from(shark_active)
+                                    * 0.01
+                                    * f64::from(hero.shark_qty)
+                                    * 20.0
                                 + f64::from(dinosaur_active)
                                     * f64::from(hero.dinosaur_qty)
                                     * 0.01
@@ -1201,35 +1225,171 @@ impl Hero {
         self.defense = (self.defense / self.defense_modifier)
             * (self.defense_modifier + 0.2 * f64::from(self.mundra_qty));
     }
+    pub fn round_floats_for_display(&self) -> Hero {
+        let mut h2 = self.clone();
+        h2.hp = round_to_2(h2.hp);
+        h2.hp_max = round_to_2(h2.hp_max);
+        h2.attack = round_to_2(h2.attack);
+        h2.defense = round_to_2(h2.defense);
+        h2.critical_chance = round_to_2(h2.critical_chance);
+        h2.critical_multiplier = round_to_2(h2.critical_multiplier);
+        h2.evasion = round_to_2(h2.evasion);
+        h2.attack_modifier = round_to_2(h2.attack_modifier);
+        h2.defense_modifier = round_to_2(h2.defense_modifier);
+        h2.extreme_crit_bonus = round_to_2(h2.extreme_crit_bonus);
+        h2.survive_chance = round_to_2(h2.survive_chance);
+        h2.consecutive_crit_bonus = round_to_2(h2.consecutive_crit_bonus);
+        h2.jarl_hp_stage_1 = round_to_2(h2.jarl_hp_stage_1);
+        h2.jarl_hp_stage_2 = round_to_2(h2.jarl_hp_stage_2);
+        h2.jarl_hp_stage_3 = round_to_2(h2.jarl_hp_stage_3);
+        h2.ninja_bonus = round_to_2(h2.ninja_bonus);
+        h2.ninja_evasion = round_to_2(h2.ninja_evasion);
+        h2.evasion_cap = round_to_2(h2.evasion_cap);
+        h2.hemma_bonus = round_to_2(h2.hemma_bonus);
+        h2.damage_taken_when_hit = round_to_2(h2.damage_taken_when_hit);
+        h2.crit_damage_taken_when_hit = round_to_2(h2.crit_damage_taken_when_hit);
+        h2.damage_dealt = round_to_2(h2.damage_dealt);
+        return h2;
+    }
+}
+
+impl From<Hero> for HeroInput {
+    fn from(item: Hero) -> Self {
+        return create_hero_input(
+            item.identifier,
+            item.class,
+            item.level,
+            item.rank,
+            item.innate_tier,
+            item.hp,
+            item.attack * item.attack_modifier,
+            item.defense,
+            item.threat,
+            item.critical_chance,
+            item.critical_multiplier,
+            item.evasion,
+            item.element_qty,
+            item.element_type.to_string(),
+            item.armadillo_qty,
+            item.lizard_qty,
+            item.shark_qty,
+            item.dinosaur_qty,
+            item.mundra_qty,
+            item.attack_modifier - 1.0,
+            item.defense_modifier - 1.0,
+        );
+    }
 }
 
 /// Create a hero performing type validation and calculating certain fields
 pub fn create_hero(
     identifier: String,
     class: String,
-    archetype: HeroArchetype,
     level: u8,
     rank: u8,
     innate_tier: u8,
     hp: f64,
-    attack: u32,
-    defense: u32,
+    attack: f64,
+    defense: f64,
     threat: u16,
-    critical_chance: u16,
+    critical_chance: f64,
     critical_multiplier: f64,
-    evasion: u16,
+    evasion: f64,
     element_qty: u16,
-    element_type: ElementType,
+    element_type_string: String,
     armadillo_qty: u8,
     lizard_qty: u8,
     shark_qty: u8,
     dinosaur_qty: u8,
     mundra_qty: u8,
-    attack_modifier: u16,
-    defense_modifier: u16,
+    attack_modifier: f64,
+    defense_modifier: f64,
 ) -> Result<Hero, &'static str> {
-    let atk_mod = 1.0 + f64::from(attack_modifier) / 100.0;
-    let def_mod = 1.0 + f64::from(defense_modifier) / 100.0;
+    let atk_mod = 1.0 + attack_modifier;
+    let def_mod = 1.0 + defense_modifier;
+
+    let archetype: HeroArchetype;
+    let red_list: [String; 12] = [
+        String::from("Soldier"),
+        String::from("Mercenary"),
+        String::from("Barbarian"),
+        String::from("Chieftain"),
+        String::from("Knight"),
+        String::from("Lord"),
+        String::from("Ranger"),
+        String::from("Warden"),
+        String::from("Samurai"),
+        String::from("Daimyo"),
+        String::from("Berserker"),
+        String::from("Jarl"),
+    ];
+    let green_list: [String; 12] = [
+        String::from("Thief"),
+        String::from("Trickster"),
+        String::from("Monk"),
+        String::from("Grandmaster"),
+        String::from("Musketeer"),
+        String::from("Conquistador"),
+        String::from("Wanderer"),
+        String::from("Pathfinder"),
+        String::from("Ninja"),
+        String::from("Sensei"),
+        String::from("Dancer"),
+        String::from("Acrobat"),
+    ];
+    let blue_list: [String; 12] = [
+        String::from("Mage"),
+        String::from("Archmage"),
+        String::from("Cleric"),
+        String::from("Bishop"),
+        String::from("Druid"),
+        String::from("Arch Druid"),
+        String::from("Sorcerer"),
+        String::from("Warlock"),
+        String::from("Spellblade"),
+        String::from("Spellknight"),
+        String::from("Geomancer"),
+        String::from("Astramancer"),
+    ];
+    let champion_list: [String; 12] = [
+        String::from("Argon"),
+        String::from("Lilu"),
+        String::from("Polonia"),
+        String::from("Yami"),
+        String::from("Rudo"),
+        String::from("Sia"),
+        String::from("Donovan"),
+        String::from("Ashley"),
+        String::from("Hemma"),
+        String::from("Aang"),
+        String::from("Sokka"),
+        String::from("King Reinholdt"),
+    ];
+
+    if red_list.contains(&class) {
+        archetype = HeroArchetype::RedFighter;
+    } else if green_list.contains(&class) {
+        archetype = HeroArchetype::GreenRogue;
+    } else if blue_list.contains(&class) {
+        archetype = HeroArchetype::BlueSpellcaster;
+    } else if champion_list.contains(&class) {
+        archetype = HeroArchetype::Champion;
+    } else {
+        return Err("Unknown Class, Could Not Create Hero");
+    }
+
+    let element_type: ElementType = ElementType::from_str(element_type_string.as_str()).unwrap();
+    // match element_type_string.as_str() {
+    //     "Air" => element_type = ElementType::Air,
+    //     "Water" => element_type = ElementType::Water,
+    //     "Fire" => element_type = ElementType::Fire,
+    //     "Earth" => element_type = ElementType::Earth,
+    //     "Light" => element_type = ElementType::Light,
+    //     "Dark" => element_type = ElementType::Dark,
+    //     "Any" => element_type = ElementType::Any,
+    //     _ => return Err("Unknown Element Type, Could Not Create Hero"),
+    // }
+
     let mut hero = Hero {
         identifier,
         class,
@@ -1239,12 +1399,12 @@ pub fn create_hero(
         innate_tier,
         hp,
         hp_max: hp,
-        attack: f64::from(attack) / atk_mod,
-        defense: f64::from(defense),
+        attack: attack / atk_mod,
+        defense: defense,
         threat,
-        critical_chance: f64::from(critical_chance) / 100.0,
+        critical_chance,
         critical_multiplier,
-        evasion: f64::from(evasion) / 100.0,
+        evasion,
         element_qty,
         element_type,
         armadillo_qty,

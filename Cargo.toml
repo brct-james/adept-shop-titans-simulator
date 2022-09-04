@@ -13,3 +13,4 @@ log = "0.4"
 fast_log = {version = "1.5.30"}
 fstrings = "0.2.3"
 csv = "1.1.6"
+strum = { version = "0.24", features = ["derive"] }

@@ -1,3 +1,5 @@
+use crate::decimals::round_to_2;
+
 use super::equipment::ElementType;
 
 use rand::distributions::{Distribution, Standard};
@@ -99,6 +101,24 @@ impl Encounter {
         } else {
             self.barrier_modifier = 0.2;
         }
+    }
+
+    pub fn round_floats_for_display(&self) -> Encounter {
+        let mut e2 = self.clone();
+        e2.hp = round_to_2(e2.hp);
+        e2.hp_max = round_to_2(e2.hp_max);
+        e2.damage = round_to_2(e2.damage);
+        e2.defense_cap = round_to_2(e2.defense_cap);
+        e2.aoe_damage_base = round_to_2(e2.aoe_damage_base);
+        e2.aoe_chance = round_to_2(e2.aoe_chance);
+        e2.barrier_hp = round_to_2(e2.barrier_hp);
+        e2.barrier_hp_max = round_to_2(e2.barrier_hp_max);
+        e2.evasion = round_to_2(e2.evasion);
+        e2.crit_chance_modifier = round_to_2(e2.crit_chance_modifier);
+        e2.crit_chance = round_to_2(e2.crit_chance);
+        e2.barrier_modifier = round_to_2(e2.barrier_modifier);
+        e2.aoe_damage = round_to_2(e2.aoe_damage);
+        return e2;
     }
 }
 

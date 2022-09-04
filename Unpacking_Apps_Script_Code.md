@@ -179,5 +179,9 @@ Hemma_bonus
 
 - Optimizations
 
+- Round f64s to 2 decimals for output in csvs
+
+- make sure only one champion per team
+
 ### Questions for Ress:
 Line 173-174: Is the mundra bonus only meant to be applied during boss fight? - oh wait mundra = 0 if not boss

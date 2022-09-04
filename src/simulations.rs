@@ -84,8 +84,8 @@ impl Simulation {
         let mut heroes_alive = self.team.get_heroes_len();
 
         log_queue.push("Ready to start quest with:".to_string());
-        log_queue.push(f!("{:#?}", self.encounter));
-        log_queue.push(f!("{:#?}", self.team));
+        log_queue.push(f!("{:#?}", self.encounter.round_floats_for_display()));
+        log_queue.push(f!("{:#?}", self.team.round_floats_for_display()));
 
         // START QUEST
         while cont_fight {

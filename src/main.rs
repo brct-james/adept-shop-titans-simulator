@@ -10,7 +10,7 @@ mod equipment;
 use crate::equipment::ElementType;
 
 mod heroes;
-use crate::heroes::{create_hero, create_team, HeroArchetype, Team};
+use crate::heroes::{create_hero, create_team, Team};
 
 mod dungeons;
 use crate::dungeons::{create_dungeon, Dungeon};
@@ -19,6 +19,11 @@ mod simulations;
 
 mod trials;
 use crate::trials::{create_trial, Trial};
+
+mod inputs;
+use crate::inputs::{load_heroes_from_csv, save_heroes_to_csv};
+
+mod decimals;
 
 /// Defines valid study types:
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
@@ -60,82 +65,82 @@ fn main() {
     let _tammara = create_hero(
         "Tammara".to_string(),
         "Arch Druid".to_string(),
-        HeroArchetype::BlueSpellcaster,
         35,
         0,
         3,
         628.0,
-        17485,
-        2869,
+        17485.0,
+        2869.0,
         10,
-        7,
+        0.07,
         340.0,
-        0,
+        0.0,
         100,
-        ElementType::Earth,
+        String::from("Earth"),
         0,
         0,
         1,
         0,
         0,
-        330,
-        80,
+        3.3,
+        0.8,
     )
     .unwrap();
 
     let _argon = create_hero(
         "argon".to_string(),
         "Argon".to_string(),
-        HeroArchetype::Champion,
         36,
         10,
         2,
         769.0,
-        2845,
-        4708,
+        2845.0,
+        4708.0,
         90,
-        5,
+        0.05,
         2.0,
-        0,
+        0.0,
         80,
-        ElementType::Light,
+        String::from("Light"),
         0,
         0,
         0,
         0,
         0,
-        0,
-        0,
+        0.0,
+        0.0,
     )
     .unwrap();
 
     let _dormammu = create_hero(
         "Dormammu".to_string(),
         "Berserker".to_string(),
-        HeroArchetype::RedFighter,
         23,
         0,
         2,
         470.0,
-        1849,
-        1658,
+        1849.0,
+        1658.0,
         90,
-        5,
+        0.05,
         2.0,
-        8,
+        0.08,
         60,
-        ElementType::Fire,
+        String::from("Fire"),
         0,
         0,
         0,
         0,
         0,
-        95,
-        80,
+        0.95,
+        0.8,
     )
     .unwrap();
 
-    let team = create_team(vec![_dormammu], None).unwrap();
+    let save_team: Vec<heroes::Hero> = vec![_argon, _tammara, _dormammu.clone()];
+    save_heroes_to_csv(String::from("input/heroes.csv"), save_team).unwrap();
+
+    let team = create_team(load_heroes_from_csv(String::from("input/heroes.csv")), None).unwrap();
 
     let dungeon = create_dungeon(
         "Sun God's Tomb".to_string(),

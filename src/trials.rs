@@ -1,3 +1,5 @@
+use crate::decimals::round_to_2;
+
 use super::dungeons::Dungeon;
 use super::heroes::Team;
 use super::simulations::{create_simulation, SimResult};
@@ -7,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 extern crate csv;
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct TrialCSVRecord {
     trial_identifier: String,
     simulation_identifier: String,
@@ -49,6 +51,30 @@ struct TrialCSVRecord {
     crits_dealt_hero_5: u8,
     dodges_hero_5: u8,
     attacks_missed_hero_5: u8,
+}
+
+impl TrialCSVRecord {
+    pub fn round_floats_for_display(&self) -> TrialCSVRecord {
+        let mut tcr2 = self.clone();
+        tcr2.encounter_hp_remaining = round_to_2(tcr2.encounter_hp_remaining);
+
+        tcr2.hp_remaining_hero_1 = round_to_2(tcr2.hp_remaining_hero_1);
+        tcr2.dmg_dealt_hero_1 = round_to_2(tcr2.dmg_dealt_hero_1);
+
+        tcr2.hp_remaining_hero_2 = round_to_2(tcr2.hp_remaining_hero_2);
+        tcr2.dmg_dealt_hero_2 = round_to_2(tcr2.dmg_dealt_hero_2);
+
+        tcr2.hp_remaining_hero_3 = round_to_2(tcr2.hp_remaining_hero_3);
+        tcr2.dmg_dealt_hero_3 = round_to_2(tcr2.dmg_dealt_hero_3);
+
+        tcr2.hp_remaining_hero_4 = round_to_2(tcr2.hp_remaining_hero_4);
+        tcr2.dmg_dealt_hero_4 = round_to_2(tcr2.dmg_dealt_hero_4);
+
+        tcr2.hp_remaining_hero_5 = round_to_2(tcr2.hp_remaining_hero_5);
+        tcr2.dmg_dealt_hero_5 = round_to_2(tcr2.dmg_dealt_hero_5);
+
+        return tcr2;
+    }
 }
 
 /// Create a trial csv record performing type validation and calculating certain fields
@@ -155,7 +181,7 @@ impl Trial {
         let mut wtr = csv::Writer::from_path(path)?;
 
         for (i, res) in self.results.iter().enumerate() {
-            wtr.serialize(create_trial_csv_record(
+            let record = create_trial_csv_record(
                 self.identifier.to_string(),
                 i.to_string(),
                 res.is_success(),
@@ -167,7 +193,8 @@ impl Trial {
                 res.get_team_crits_dealt(),
                 res.get_team_dodges(),
                 res.get_team_attacks_missed(),
-            ))?;
+            );
+            wtr.serialize(record.round_floats_for_display())?;
         }
 
         wtr.flush()?;
