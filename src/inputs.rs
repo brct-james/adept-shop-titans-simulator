@@ -31,7 +31,7 @@ pub struct HeroInput {
 }
 
 impl HeroInput {
-    pub fn round_floats_for_display(&self) -> HeroInput {
+    pub fn _round_floats_for_display(&self) -> HeroInput {
         let mut hi2 = self.clone();
         hi2.hp = round_to_2(hi2.hp);
         hi2.attack = round_to_2(hi2.attack);
@@ -133,11 +133,11 @@ pub fn load_heroes_from_csv(path: String) -> Vec<Hero> {
     return heroes;
 }
 
-pub fn save_heroes_to_csv(path: String, heroes: Vec<Hero>) -> Result<(), std::io::Error> {
+pub fn _save_heroes_to_csv(path: String, heroes: Vec<Hero>) -> Result<(), std::io::Error> {
     let mut wtr = csv::Writer::from_path(path)?;
 
     for hero in heroes {
-        wtr.serialize(HeroInput::from(hero).round_floats_for_display())?;
+        wtr.serialize(HeroInput::from(hero)._round_floats_for_display())?;
     }
 
     wtr.flush()?;

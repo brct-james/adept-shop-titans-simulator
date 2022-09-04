@@ -10,7 +10,7 @@ mod equipment;
 use crate::equipment::ElementType;
 
 mod heroes;
-use crate::heroes::{create_hero, create_team, Team};
+use crate::heroes::{create_team, Team};
 
 mod dungeons;
 use crate::dungeons::{create_dungeon, Dungeon};
@@ -21,7 +21,7 @@ mod trials;
 use crate::trials::{create_trial, Trial};
 
 mod inputs;
-use crate::inputs::{load_heroes_from_csv, save_heroes_to_csv};
+use crate::inputs::{load_heroes_from_csv};
 
 mod decimals;
 
@@ -52,93 +52,6 @@ fn main() {
     }
     fast_log::init(fast_log::Config::new().file(&f!("target/logs/trial_{}.log", i))).unwrap();
     info!("Start of Log File");
-    // println!("Hello, world!");
-    // let hero = HeroTrial {
-    //     class: Class::Knight,
-    // };
-
-    // if hero.get_class() == Class::Knight {
-    //     println!("Knight");
-    //     println!("{:?}", hero.get_class());
-    // }
-
-    let _tammara = create_hero(
-        "Tammara".to_string(),
-        "Arch Druid".to_string(),
-        35,
-        0,
-        3,
-        628.0,
-        17485.0,
-        2869.0,
-        10,
-        0.07,
-        340.0,
-        0.0,
-        100,
-        String::from("Earth"),
-        0,
-        0,
-        1,
-        0,
-        0,
-        3.3,
-        0.8,
-    )
-    .unwrap();
-
-    let _argon = create_hero(
-        "Argon".to_string(),
-        "Argon".to_string(),
-        36,
-        10,
-        2,
-        769.0,
-        2845.0,
-        4708.0,
-        90,
-        0.05,
-        2.0,
-        0.0,
-        80,
-        String::from("Light"),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0.0,
-        0.0,
-    )
-    .unwrap();
-
-    let _dormammu = create_hero(
-        "Dormammu".to_string(),
-        "Berserker".to_string(),
-        23,
-        0,
-        2,
-        470.0,
-        1849.0,
-        1658.0,
-        90,
-        0.05,
-        2.0,
-        0.08,
-        60,
-        String::from("Fire"),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0.95,
-        0.8,
-    )
-    .unwrap();
-
-    let save_team: Vec<heroes::Hero> = vec![_argon, _tammara, _dormammu.clone()];
-    save_heroes_to_csv(String::from("input/heroes.csv"), save_team).unwrap();
 
     let team = create_team(load_heroes_from_csv(String::from("input/heroes.csv")), None).unwrap();
 
@@ -235,8 +148,4 @@ fn main() {
         avg_dmg_dealt_0,
         avg_encounter_hp_remaining,
     );
-
-    // res[0].print_team();
-    // res[0].print_encounter();
-    // println!("Example: {:#?} {:#?}", res[0].is_success(), res[0])
 }

@@ -183,5 +183,10 @@ Hemma_bonus
 
 - make sure only one champion per team
 
+- pull statistics and dungeon info from spreadsheet rather than manually entered
+
+- team will have its own identifier and use the hero identifiers to select from the heroes csv, team is its own csv
+- trial will then have another csv that selects dungeons from their own csv by identifier
+
 ### Questions for Ress:
 Line 173-174: Is the mundra bonus only meant to be applied during boss fight? - oh wait mundra = 0 if not boss
