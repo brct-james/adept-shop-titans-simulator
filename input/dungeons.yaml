@@ -1,0 +1,69 @@
+- zone: Sun God's Tomb
+  max_num_heroes: 4
+  hp:
+  - 25000.0
+  - 40000.0
+  - 80000.0
+  - 430000.0
+  damage:
+  - 40.0
+  - 50.0
+  - 60.0
+  - 130.0
+  defense_cap:
+  - 12000.0
+  - 14400.0
+  - 16200.0
+  - 42000.0
+  aoe_damage:
+  - 20.0
+  - 25.0
+  - 30.0
+  - 65.0
+  aoe_chance:
+  - 25.0
+  - 25.0
+  - 25.0
+  - 25.0
+  minimum_power:
+  - 1200
+  - 1500
+  - 2500
+  - 7500
+  barrier_types:
+  - Dark
+  - Water
+  - Air
+  barrier_health: 250.0
+  boss_hp:
+  - 60000.0
+  - 90000.0
+  - 130000.0
+  - 750000.0
+  boss_damage:
+  - 60.0
+  - 70.0
+  - 80.0
+  - 175.0
+  boss_defense_cap:
+  - 16800.0
+  - 20400.0
+  - 22800.0
+  - 47000.0
+  boss_aoe_damage:
+  - 30.0
+  - 35.0
+  - 40.0
+  - 80.0
+  boss_aoe_chance:
+  - 25.0
+  - 25.0
+  - 25.0
+  - 25.0
+  boss_minimum_power:
+  - 1800
+  - 2500
+  - 4000
+  - 10000
+  boss_barrier_type: Light
+  boss_barrier_health: 350.0

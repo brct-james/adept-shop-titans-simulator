@@ -1,10 +1,13 @@
 use crate::decimals::round_to_2;
+use crate::inputs::{create_dungeon_input, DungeonInput};
 
 use super::equipment::ElementType;
 
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+
+use std::string::ToString;
 
 /// Defines the valid types of mini boss
 pub enum MiniBossType {
@@ -129,7 +132,7 @@ pub fn create_encounter(
     damage: f64,
     defense_cap: f64,
     aoe_damage_base: f64,
-    aoe_chance: u16,
+    aoe_chance: f64,
     is_boss: bool,
     is_extreme: bool,
     mini_boss: Option<MiniBossType>,
@@ -178,7 +181,7 @@ pub fn create_encounter(
         damage: damage * damage_modifier,
         defense_cap,
         aoe_damage_base,
-        aoe_chance: f64::from(aoe_chance) / 100.0f64,
+        aoe_chance: aoe_chance / 100.0,
         is_boss,
         is_extreme,
         barrier_type,
@@ -208,7 +211,7 @@ pub struct Dungeon {
     damage: [f64; 4],
     defense_cap: [f64; 4],
     aoe_damage: [f64; 4],
-    aoe_chance: [u16; 4],
+    aoe_chance: [f64; 4],
     minimum_power: [u32; 4],
 
     // Extreme Only
@@ -220,7 +223,7 @@ pub struct Dungeon {
     boss_damage: [f64; 4],
     boss_defense_cap: [f64; 4],
     boss_aoe_damage: [f64; 4],
-    boss_aoe_chance: [u16; 4],
+    boss_aoe_chance: [f64; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: ElementType,
     boss_barrier_health: f64,
@@ -326,6 +329,40 @@ impl Dungeon {
     }
 }
 
+impl From<Dungeon> for DungeonInput {
+    fn from(item: Dungeon) -> Self {
+        let mut barrier_types: [String; 3] = [
+            String::from("Any"),
+            String::from("Any"),
+            String::from("Any"),
+        ];
+        for (i, bt) in item.barrier_types.iter().enumerate() {
+            barrier_types[i] = bt.to_string();
+        }
+        let boss_barrier_type = item.boss_barrier_type.to_string();
+        return create_dungeon_input(
+            item.zone,
+            item.max_num_heroes,
+            item.hp,
+            item.damage,
+            item.defense_cap,
+            item.aoe_damage,
+            item.aoe_chance,
+            item.minimum_power,
+            barrier_types,
+            item.barrier_health,
+            item.boss_hp,
+            item.boss_damage,
+            item.boss_defense_cap,
+            item.boss_aoe_damage,
+            item.boss_aoe_chance,
+            item.boss_minimum_power,
+            boss_barrier_type,
+            item.boss_barrier_health,
+        );
+    }
+}
+
 /// Create a dungeon performing type validation and calculating certain fields
 pub fn create_dungeon(
     zone: String,
@@ -334,7 +371,7 @@ pub fn create_dungeon(
     damage: [f64; 4],
     defense_cap: [f64; 4],
     aoe_damage: [f64; 4],
-    aoe_chance: [u16; 4],
+    aoe_chance: [f64; 4],
     minimum_power: [u32; 4],
     barrier_types: [ElementType; 3],
     barrier_health: f64,
@@ -342,7 +379,7 @@ pub fn create_dungeon(
     boss_damage: [f64; 4],
     boss_defense_cap: [f64; 4],
     boss_aoe_damage: [f64; 4],
-    boss_aoe_chance: [u16; 4],
+    boss_aoe_chance: [f64; 4],
     boss_minimum_power: [u32; 4],
     boss_barrier_type: ElementType,
     boss_barrier_health: f64,

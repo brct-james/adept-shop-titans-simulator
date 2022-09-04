@@ -7,13 +7,12 @@ use log::info;
 extern crate fstrings;
 
 mod equipment;
-use crate::equipment::ElementType;
 
 mod heroes;
 use crate::heroes::{create_team, Team};
 
 mod dungeons;
-use crate::dungeons::{create_dungeon, Dungeon};
+use crate::dungeons::Dungeon;
 
 mod simulations;
 
@@ -21,7 +20,7 @@ mod trials;
 use crate::trials::{create_trial, Trial};
 
 mod inputs;
-use crate::inputs::{load_heroes_from_csv};
+use crate::inputs::{load_dungeons_from_yaml, load_heroes_from_csv};
 
 mod decimals;
 
@@ -55,27 +54,7 @@ fn main() {
 
     let team = create_team(load_heroes_from_csv(String::from("input/heroes.csv")), None).unwrap();
 
-    let dungeon = create_dungeon(
-        "Sun God's Tomb".to_string(),
-        4,
-        [25000.0, 40000.0, 80000.0, 430000.0],
-        [40.0, 50.0, 60.0, 130.0],
-        [12000.0, 14400.0, 16200.0, 42000.0],
-        [20.0, 25.0, 30.0, 65.0],
-        [25, 25, 25, 25],
-        [1200, 1500, 2500, 7500],
-        [ElementType::Dark, ElementType::Water, ElementType::Air],
-        250.0,
-        [60000.0, 90000.0, 130000.0, 750000.0],
-        [60.0, 70.0, 80.0, 175.0],
-        [16800.0, 20400.0, 22800.0, 47000.0],
-        [30.0, 35.0, 40.0, 80.0],
-        [25, 25, 25, 25],
-        [1800, 2500, 4000, 10000],
-        ElementType::Light,
-        350.0,
-    )
-    .unwrap();
+    let dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
 
     // Difficulty settings (include all that should apply):
     // 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
@@ -85,7 +64,7 @@ fn main() {
         "debugging".to_string(),
         100,
         team,
-        dungeon,
+        dungeons[0].clone(),
         vec![1],
         Some(false),
         true,
