@@ -88,7 +88,7 @@ fn main() {
     .unwrap();
 
     let _argon = create_hero(
-        "argon".to_string(),
+        "Argon".to_string(),
         "Argon".to_string(),
         36,
         10,
@@ -170,7 +170,7 @@ fn main() {
 
     let mut trial = create_trial(
         "debugging".to_string(),
-        1000,
+        100,
         team,
         dungeon,
         vec![1],

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::decimals::round_to_2;
+
 use super::heroes::{create_hero, Hero};
 
 /// Defines HeroeInput format for deserialization from CSV
@@ -26,6 +28,21 @@ pub struct HeroInput {
     mundra_qty: u8,
     attack_modifier: f64,
     defense_modifier: f64,
+}
+
+impl HeroInput {
+    pub fn round_floats_for_display(&self) -> HeroInput {
+        let mut hi2 = self.clone();
+        hi2.hp = round_to_2(hi2.hp);
+        hi2.attack = round_to_2(hi2.attack);
+        hi2.defense = round_to_2(hi2.defense);
+        hi2.critical_chance = round_to_2(hi2.critical_chance);
+        hi2.critical_multiplier = round_to_2(hi2.critical_multiplier);
+        hi2.evasion = round_to_2(hi2.evasion);
+        hi2.attack_modifier = round_to_2(hi2.attack_modifier);
+        hi2.defense_modifier = round_to_2(hi2.defense_modifier);
+        return hi2;
+    }
 }
 
 impl From<HeroInput> for Hero {
@@ -120,7 +137,7 @@ pub fn save_heroes_to_csv(path: String, heroes: Vec<Hero>) -> Result<(), std::io
     let mut wtr = csv::Writer::from_path(path)?;
 
     for hero in heroes {
-        wtr.serialize(HeroInput::from(hero.round_floats_for_display()))?;
+        wtr.serialize(HeroInput::from(hero).round_floats_for_display())?;
     }
 
     wtr.flush()?;

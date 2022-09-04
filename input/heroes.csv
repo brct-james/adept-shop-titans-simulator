@@ -1,4 +1,4 @@
 identifier,class,level,rank,innate_tier,hp,attack,defense,threat,critical_chance,critical_multiplier,evasion,element_qty,element_type,armadillo_qty,lizard_qty,shark_qty,dinosaur_qty,mundra_qty,attack_modifier,defense_modifier
-argon,Argon,36,10,2,769.0,2845.0,4708.0,90,0.05,2.0,0.0,80,Light,0,0,0,0,0,0.0,0.0
-Tammara,Arch Druid,35,0,3,628.0,17485.004,2869.0,10,0.07,340.0,0.0,100,Earth,0,0,1,0,0,3.3,0.8
-Dormammu,Berserker,23,0,2,470.0,1849.0095000000001,1658.0,90,0.05,2.0,0.08,60,Fire,0,0,0,0,0,0.95,0.8
+Argon,Argon,36,10,2,769.0,2845.0,4708.0,90,0.05,2.0,0.0,80,Light,0,0,0,0,0,0.0,0.0
+Tammara,Arch Druid,35,0,3,628.0,17485.0,2869.0,10,0.07,340.0,0.0,100,Earth,0,0,1,0,0,3.3,0.8
+Dormammu,Berserker,23,0,2,470.0,1849.0,1658.0,90,0.05,2.0,0.08,60,Fire,0,0,0,0,0,0.95,0.8
