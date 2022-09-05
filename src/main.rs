@@ -13,6 +13,7 @@ extern crate fstrings;
 mod equipment;
 
 mod heroes;
+use crate::hero_builder::_create_hero_class;
 use crate::heroes::{create_team, SimHero, Team};
 
 mod dungeons;
@@ -26,8 +27,8 @@ use crate::trials::{create_trial, Trial};
 
 mod inputs;
 use crate::inputs::{
-    load_dungeons_from_yaml, load_hero_classes_from_yaml, load_heroes_as_sim_heroes_from_csv,
-    load_sim_heroes_from_csv,
+    _save_hero_classes_to_yaml, load_dungeons_from_yaml, load_hero_classes_from_yaml,
+    load_heroes_as_sim_heroes_from_csv, load_sim_heroes_from_csv,
 };
 
 mod decimals;
@@ -83,58 +84,110 @@ fn main() {
     fast_log::init(fast_log::Config::new().file(&f!("target/logs/trial_{}.log", i))).unwrap();
     info!("Start of Log File");
 
-    // let hc_hm = HashMap::from([(
-    //     String::from("Soldier"),
-    //     create_hero_class(
-    //         String::from("Soldier"),
-    //         String::from(""),
-    //         0,
-    //         0,
-    //         vec![
-    //             40.0, 43.0, 46.0, 49.0, 52.0, 55.0, 59.0, 62.0, 65.0, 71.0, 77.0, 83.0, 90.0, 96.0,
-    //             102.0, 108.0, 114.0, 121.0, 127.0, 133.0, 142.0, 152.0, 161.0, 170.0, 179.0, 189.0,
-    //             198.0, 207.0, 217.0, 226.0, 238.0, 251.0, 263.0, 276.0, 288.0, 300.0, 313.0, 325.0,
-    //             338.0, 350.0,
-    //         ],
-    //         vec![
-    //             90.0, 98.0, 107.0, 115.0, 123.0, 132.0, 140.0, 148.0, 157.0, 173.0, 190.0, 207.0,
-    //             224.0, 240.0, 257.0, 274.0, 290.0, 307.0, 324.0, 340.0, 366.0, 391.0, 416.0, 441.0,
-    //             466.0, 491.0, 516.0, 541.0, 566.0, 591.0, 624.0, 658.0, 691.0, 725.0, 758.0, 791.0,
-    //             825.0, 858.0, 892.0, 925.0,
-    //         ],
-    //         vec![
-    //             35.0, 39.0, 42.0, 46.0, 50.0, 53.0, 57.0, 61.0, 64.0, 71.0, 79.0, 86.0, 93.0,
-    //             101.0, 108.0, 115.0, 123.0, 130.0, 137.0, 144.0, 155.0, 166.0, 177.0, 188.0, 199.0,
-    //             210.0, 221.0, 232.0, 243.0, 254.0, 269.0, 283.0, 298.0, 312.0, 327.0, 342.0, 356.0,
-    //             371.0, 385.0, 400.0,
-    //         ],
-    //         0.0,
-    //         0.05,
-    //         2.0,
-    //         90,
-    //         String::from("Earth"),
-    //         [
-    //             vec![
-    //                 String::from("Sword"),
-    //                 String::from("Mace"),
-    //                 String::from("Dagger"),
-    //             ],
-    //             vec![String::from("Heavy Armor")],
-    //             vec![String::from("Gauntlets")],
-    //             vec![String::from("Heavy Footwear")],
-    //             vec![String::from("Potion")],
-    //             vec![String::from("Shield")],
-    //         ],
-    //         [
-    //             String::from("Martial Training"),
-    //             String::from("Martial Expert"),
-    //             String::from("Martial_Master"),
-    //             String::from(""),
-    //         ],
-    //     ),
-    // )]);
+    let hc_hm = HashMap::from([
+        (
+            String::from("Soldier"),
+            _create_hero_class(
+                String::from("Soldier"),
+                String::from(""),
+                0,
+                0,
+                vec![
+                    30.0, 33.0, 35.0, 38.0, 41.0, 43.0, 46.0, 49.0, 52.0, 57.0, 62.0, 68.0, 73.0,
+                    79.0, 84.0, 89.0, 95.0, 100.0, 106.0, 111.0, 119.0, 127.0, 135.0, 143.0, 151.0,
+                    160.0, 168.0, 176.0, 184.0, 192.0, 203.0, 214.0, 224.0, 235.0, 246.0, 257.0,
+                    268.0, 278.0, 289.0, 300.0,
+                ],
+                vec![
+                    10.0, 13.0, 17.0, 20.0, 24.0, 27.0, 30.0, 34.0, 37.0, 44.0, 51.0, 58.0, 64.0,
+                    71.0, 78.0, 85.0, 92.0, 98.0, 105.0, 112.0, 122.0, 132.0, 143.0, 153.0, 163.0,
+                    173.0, 183.0, 194.0, 204.0, 214.0, 228.0, 241.0, 255.0, 268.0, 282.0, 296.0,
+                    309.0, 323.0, 336.0, 350.0,
+                ],
+                vec![
+                    15.0, 19.0, 24.0, 28.0, 32.0, 37.0, 41.0, 45.0, 50.0, 58.0, 67.0, 76.0, 85.0,
+                    93.0, 102.0, 111.0, 119.0, 128.0, 137.0, 145.0, 158.0, 172.0, 185.0, 198.0,
+                    211.0, 224.0, 237.0, 250.0, 263.0, 276.0, 293.0, 311.0, 328.0, 346.0, 363.0,
+                    380.0, 398.0, 415.0, 433.0, 450.0,
+                ],
+                0.0,
+                0.05,
+                2.0,
+                90,
+                String::from("Earth"),
+                [
+                    vec![
+                        String::from("Sword"),
+                        String::from("Mace"),
+                        String::from("Dagger"),
+                    ],
+                    vec![String::from("Heavy Armor")],
+                    vec![String::from("Gauntlets")],
+                    vec![String::from("Heavy Footwear")],
+                    vec![String::from("Potion")],
+                    vec![String::from("Shield")],
+                ],
+                [
+                    String::from("Martial Training"),
+                    String::from("Martial Expert"),
+                    String::from("Martial_Master"),
+                    String::from(""),
+                ],
+            ),
+        ),
+        (
+            String::from("Arch Druid"),
+            _create_hero_class(
+                String::from("Arch Druid"),
+                String::from("Titan Soul"),
+                0,
+                0,
+                vec![
+                    40.0, 43.0, 46.0, 49.0, 52.0, 55.0, 59.0, 62.0, 65.0, 71.0, 77.0, 83.0, 90.0,
+                    96.0, 102.0, 108.0, 114.0, 121.0, 127.0, 133.0, 142.0, 152.0, 161.0, 170.0,
+                    179.0, 189.0, 198.0, 207.0, 217.0, 226.0, 238.0, 251.0, 263.0, 276.0, 288.0,
+                    300.0, 313.0, 325.0, 338.0, 350.0,
+                ],
+                vec![
+                    90.0, 98.0, 107.0, 115.0, 123.0, 132.0, 140.0, 148.0, 157.0, 173.0, 190.0,
+                    207.0, 224.0, 240.0, 257.0, 274.0, 290.0, 307.0, 324.0, 340.0, 366.0, 391.0,
+                    416.0, 441.0, 466.0, 491.0, 516.0, 541.0, 566.0, 591.0, 624.0, 658.0, 691.0,
+                    725.0, 758.0, 791.0, 825.0, 858.0, 892.0, 925.0,
+                ],
+                vec![
+                    35.0, 39.0, 42.0, 46.0, 50.0, 53.0, 57.0, 61.0, 64.0, 71.0, 79.0, 86.0, 93.0,
+                    101.0, 108.0, 115.0, 123.0, 130.0, 137.0, 144.0, 155.0, 166.0, 177.0, 188.0,
+                    199.0, 210.0, 221.0, 232.0, 243.0, 254.0, 269.0, 283.0, 298.0, 312.0, 327.0,
+                    342.0, 356.0, 371.0, 385.0, 400.0,
+                ],
+                0.0,
+                0.05,
+                2.0,
+                10,
+                String::from("Earth"),
+                [
+                    vec![
+                        String::from("Staff"),
+                        String::from("Bow"),
+                        String::from("Wand"),
+                    ],
+                    vec![String::from("Clothes")],
+                    vec![String::from("Herbal Medicine")],
+                    vec![String::from("Herbal Medicine")],
+                    vec![String::from("Amulet"), String::from("Ring")],
+                    vec![String::from("Spell")],
+                ],
+                [
+                    String::from("Primal Magic"),
+                    String::from("Ancestral Power"),
+                    String::from("Might of the Land"),
+                    String::from("Gaia's Wrath"),
+                ],
+            ),
+        ),
+    ]);
 
-    // _save_hero_classes_to_yaml(String::from("input/hero_classes.yaml"), hc_hm).unwrap();
+    _save_hero_classes_to_yaml(String::from("input/hero_classes.yaml"), hc_hm).unwrap();
 
     let hero_classes = load_hero_classes_from_yaml(String::from("input/hero_classes.yaml"));
 

@@ -201,8 +201,18 @@ Hemma_bonus
 
 3. ~~Pull gear directly from data spreadsheet~~
 
-4. Either pull skills from data spreadsheet and parse, or manually create skill sheet
+4. Either pull skills from data spreadsheet and parse, or manually create skill sheet (remember some skills are class restricted)
 
 5. Validate results for extreme and boss encounters, as well as cinderlake normals
 
 6. In hero builder script ensure scaling covers all things that need to scale AND that the Hero cant somehow bypass scaling AND that things like eva and crit chance come from HeroClass AND throughough elementType should be converted from string to ElementType at least once to validate AND write a method to validate skills later
+
+7. Insert all the remaining hero classes into yaml... ALSO the Soldier is currently using the Arch Druid stats... Replace with their correct stats!
+
+### Goals:
+
+1. Rank skill loadouts for individual classes (develop a ranking criteria or relative scoring metric, OR use survival rate but automatically retry anything > 95% at the next highest difficulty until the entire set of builds is ordered correctly and unambiguously)
+
+2. Compare classes relative to each other - both at peak performance and with 'good enough' skills
+
+3. Team combinations - what are the optimal classes to group with each other
