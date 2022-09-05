@@ -820,11 +820,17 @@ impl Team {
                             * (hero.critical_multiplier + hero.consecutive_crit_bonus);
                         if round != 1 || (hero.class != "Samurai" && hero.class != "Damiyo") {
                             log_queue.push(f!(
-                                "Hero {} is class {} and round is 1 so pierce barrier if it exists",
+                                "Hero {} is class {} and round is not 1 so do not pierce barrier",
                                 hero.identifier,
                                 hero.class
                             ));
                             damage *= barrier_modifier;
+                        } else {
+                            log_queue.push(f!(
+                                "Hero {} is class {} and round is 1 so pierce elemental barrier",
+                                hero.identifier,
+                                hero.class
+                            ));
                         }
                         encounter_hp -= damage;
                         hero.damage_dealt += damage;

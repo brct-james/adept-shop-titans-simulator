@@ -230,6 +230,10 @@ pub struct Dungeon {
 }
 
 impl Dungeon {
+    pub fn get_zone(&self) -> String {
+        return self.zone.clone();
+    }
+
     /// Difficulty settings (include all that should apply):
     /// 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
     /// 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme

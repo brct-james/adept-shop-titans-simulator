@@ -43,6 +43,17 @@ struct Study {
     trials: Vec<Trial>,
 }
 
+fn select_dungeon(name: String, dungeons: Vec<Dungeon>) -> Dungeon {
+    if dungeons.len() < 1 {
+        panic!("Dungeons must contain values");
+    }
+    return dungeons
+        .into_iter()
+        .filter(|d| name == d.get_zone())
+        .collect::<Vec<Dungeon>>()[0]
+        .clone();
+}
+
 fn main() {
     let mut i = 0;
     while std::path::Path::new(&f!("target/logs/trial_{}.log", i)).exists() {
@@ -55,6 +66,7 @@ fn main() {
     let team = create_team(load_heroes_from_csv(String::from("input/heroes.csv")), None).unwrap();
 
     let dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
+    let dungeon = select_dungeon(String::from("Bleakspire Peak"), dungeons);
 
     // Difficulty settings (include all that should apply):
     // 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
@@ -64,8 +76,8 @@ fn main() {
         "debugging".to_string(),
         100,
         team,
-        dungeons[0].clone(),
-        vec![1],
+        dungeon,
+        vec![6],
         Some(false),
         true,
     )
