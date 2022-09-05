@@ -599,7 +599,6 @@ pub fn load_hero_classes_from_yaml(path: String) -> HashMap<String, HeroClass> {
     return hero_classes;
 }
 
-/// REPLACES hero_classes.yaml
 pub fn _save_hero_classes_to_yaml(
     path: String,
     hero_classes: HashMap<String, HeroClass>,
@@ -608,9 +607,7 @@ pub fn _save_hero_classes_to_yaml(
     let mut hashmap: HashMap<String, HeroClass>;
     if already_exists {
         hashmap = load_hero_classes_from_yaml(path.to_string());
-        for (entry_name, entry) in hero_classes.iter() {
-            hashmap.insert(entry_name.to_string(), entry.clone());
-        }
+        hashmap.extend(hero_classes);
     } else {
         hashmap = hero_classes;
     }
