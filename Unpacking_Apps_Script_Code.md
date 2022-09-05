@@ -191,3 +191,18 @@ Hemma_bonus
 - redo readme
 
 - tammara is giving HUGE crits - like 7.7m damage, I am assuming that is because I input her stats wrong, check once hero builder is done
+
+
+### Todo:
+
+1. Create logic for automatically setting up trials
+
+2. Create hero builder script
+
+3. ~~Pull gear directly from data spreadsheet~~
+
+4. Either pull skills from data spreadsheet and parse, or manually create skill sheet
+
+5. Validate results for extreme and boss encounters, as well as cinderlake normals
+
+6. In hero builder script ensure scaling covers all things that need to scale AND that the Hero cant somehow bypass scaling AND that things like eva and crit chance come from HeroClass AND throughough elementType should be converted from string to ElementType at least once to validate AND write a method to validate skills later

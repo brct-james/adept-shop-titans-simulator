@@ -99,6 +99,12 @@ pub struct Blueprint {
     speed_up_energy: u16,
 }
 
+impl Blueprint {
+    pub fn get_type(&self) -> String {
+        return self.type_.to_string();
+    }
+}
+
 pub fn create_blueprint(
     name: String,
     type_: String,

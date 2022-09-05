@@ -230,7 +230,7 @@ pub struct Dungeon {
 }
 
 impl Dungeon {
-    pub fn get_zone(&self) -> String {
+    pub fn _get_zone(&self) -> String {
         return self.zone.clone();
     }
 

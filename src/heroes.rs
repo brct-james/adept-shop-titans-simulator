@@ -1,6 +1,6 @@
 use crate::{
     decimals::round_to_2,
-    inputs::{create_hero_input, HeroInput},
+    inputs::{create_sim_hero_input, SimHeroInput},
 };
 
 use std::str::FromStr;
@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// One or more Heroes fighting together in a dungeon and what booster they have
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Team {
-    heroes: Vec<Hero>,
+    heroes: Vec<SimHero>,
     booster: Option<BoosterType>,
     num_fighters: u8,
     num_rogues: u8,
@@ -36,7 +36,7 @@ pub enum HeroArchetype {
 impl Team {
     pub fn round_floats_for_display(&self) -> Team {
         let mut t2 = self.clone();
-        let mut heroes: Vec<Hero> = vec![];
+        let mut heroes: Vec<SimHero> = vec![];
         for hero in &t2.heroes {
             heroes.push(hero.round_floats_for_display());
         }
@@ -385,7 +385,7 @@ impl Team {
             }
         }
 
-        let mut lord_hero: Hero;
+        let mut lord_hero: SimHero;
         lord_hero = self.heroes[lord_index].clone();
 
         if rng.gen::<f64>() < aoe_chance && heroes_alive > 1 {
@@ -1122,7 +1122,10 @@ impl Team {
 }
 
 /// Create a team performing type validation and calculating certain fields
-pub fn create_team(heroes: Vec<Hero>, booster: Option<BoosterType>) -> Result<Team, &'static str> {
+pub fn create_team(
+    heroes: Vec<SimHero>,
+    booster: Option<BoosterType>,
+) -> Result<Team, &'static str> {
     if heroes.len() < 1 {
         return Err("cannot form team with < 1 hero");
     }
@@ -1171,7 +1174,7 @@ pub fn create_team(heroes: Vec<Hero>, booster: Option<BoosterType>) -> Result<Te
 
 /// Holds information on a hero / champion
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct Hero {
+pub struct SimHero {
     identifier: String,
     class: String,
     archetype: HeroArchetype,
@@ -1223,7 +1226,11 @@ pub struct Hero {
     attacks_missed: u8,
 }
 
-impl Hero {
+impl SimHero {
+    pub fn _get_identifier(&self) -> String {
+        return self.identifier.to_string();
+    }
+
     fn modify_for_extreme_encounter(&mut self) {
         self.evasion -= 0.2;
     }
@@ -1231,7 +1238,7 @@ impl Hero {
         self.defense = (self.defense / self.defense_modifier)
             * (self.defense_modifier + 0.2 * f64::from(self.mundra_qty));
     }
-    pub fn round_floats_for_display(&self) -> Hero {
+    pub fn round_floats_for_display(&self) -> SimHero {
         let mut h2 = self.clone();
         h2.hp = round_to_2(h2.hp);
         h2.hp_max = round_to_2(h2.hp_max);
@@ -1259,9 +1266,9 @@ impl Hero {
     }
 }
 
-impl From<Hero> for HeroInput {
-    fn from(item: Hero) -> Self {
-        return create_hero_input(
+impl From<SimHero> for SimHeroInput {
+    fn from(item: SimHero) -> Self {
+        return create_sim_hero_input(
             item.identifier,
             item.class,
             item.level,
@@ -1288,7 +1295,7 @@ impl From<Hero> for HeroInput {
 }
 
 /// Create a hero performing type validation and calculating certain fields
-pub fn create_hero(
+pub fn create_sim_hero(
     identifier: String,
     class: String,
     level: u8,
@@ -1310,7 +1317,7 @@ pub fn create_hero(
     mundra_qty: u8,
     attack_modifier: f64,
     defense_modifier: f64,
-) -> Result<Hero, &'static str> {
+) -> Result<SimHero, &'static str> {
     let atk_mod = 1.0 + attack_modifier;
     let def_mod = 1.0 + defense_modifier;
 
@@ -1396,7 +1403,7 @@ pub fn create_hero(
     //     _ => return Err("Unknown Element Type, Could Not Create Hero"),
     // }
 
-    let mut hero = Hero {
+    let mut hero = SimHero {
         identifier,
         class,
         archetype,

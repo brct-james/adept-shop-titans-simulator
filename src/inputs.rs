@@ -1,17 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 use crate::decimals::{_round_array_of_len_4_to_2, round_to_2};
-use crate::equipment::ElementType;
+use crate::equipment::{Blueprint, ElementType};
+use crate::hero_builder::{create_hero, Hero, HeroClass};
 
+use std::collections::HashMap;
 use std::str::FromStr;
 
-use super::heroes::{create_hero, Hero};
+use super::heroes::{create_sim_hero, SimHero};
 
 use super::dungeons::{create_dungeon, Dungeon};
 
 /// Defines HeroeInput format for deserialization from CSV
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct HeroInput {
+pub struct SimHeroInput {
     identifier: String,
     class: String,
     level: u8,
@@ -35,8 +37,8 @@ pub struct HeroInput {
     defense_modifier: f64,
 }
 
-impl HeroInput {
-    pub fn _round_floats_for_display(&self) -> HeroInput {
+impl SimHeroInput {
+    pub fn _round_floats_for_display(&self) -> SimHeroInput {
         let mut hi2 = self.clone();
         hi2.hp = round_to_2(hi2.hp);
         hi2.attack = round_to_2(hi2.attack);
@@ -50,10 +52,10 @@ impl HeroInput {
     }
 }
 
-impl From<HeroInput> for Hero {
+impl From<SimHeroInput> for SimHero {
     /// Create a hero from the input object performing type validation and calculating certain fields
-    fn from(item: HeroInput) -> Self {
-        return create_hero(
+    fn from(item: SimHeroInput) -> Self {
+        return create_sim_hero(
             item.identifier,
             item.class,
             item.level,
@@ -80,7 +82,7 @@ impl From<HeroInput> for Hero {
     }
 }
 
-pub fn create_hero_input(
+pub fn create_sim_hero_input(
     identifier: String,
     class: String,
     level: u8,
@@ -102,8 +104,8 @@ pub fn create_hero_input(
     mundra_qty: u8,
     attack_modifier: f64,
     defense_modifier: f64,
-) -> HeroInput {
-    return HeroInput {
+) -> SimHeroInput {
+    return SimHeroInput {
         identifier,
         class,
         level,
@@ -128,21 +130,31 @@ pub fn create_hero_input(
     };
 }
 
-pub fn load_heroes_from_csv(path: String) -> Vec<Hero> {
-    let mut heroes: Vec<Hero> = vec![];
+pub fn load_sim_heroes_from_csv(path: String) -> Vec<SimHero> {
+    let mut heroes: Vec<SimHero> = vec![];
     let mut reader = csv::Reader::from_path(path).unwrap();
     for result in reader.deserialize() {
-        let hero_in: HeroInput = result.unwrap();
-        heroes.push(Hero::from(hero_in));
+        let hero_in: SimHeroInput = result.unwrap();
+        heroes.push(SimHero::from(hero_in));
     }
     return heroes;
 }
 
-pub fn _save_heroes_to_csv(path: String, heroes: Vec<Hero>) -> Result<(), std::io::Error> {
-    let mut wtr = csv::Writer::from_path(path)?;
+pub fn _save_sim_heroes_to_csv(path: String, heroes: Vec<SimHero>) -> Result<(), std::io::Error> {
+    let already_exists = std::path::Path::new(&path).exists();
+    let writer = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(path)
+        .unwrap();
+
+    let mut wtr = csv::WriterBuilder::new()
+        .has_headers(!already_exists)
+        .from_writer(writer);
 
     for hero in heroes {
-        wtr.serialize(HeroInput::from(hero)._round_floats_for_display())?;
+        wtr.serialize(SimHeroInput::from(hero)._round_floats_for_display())?;
     }
 
     wtr.flush()?;
@@ -268,23 +280,348 @@ pub fn create_dungeon_input(
     };
 }
 
-pub fn load_dungeons_from_yaml(path: String) -> Vec<Dungeon> {
-    let mut dungeons: Vec<Dungeon> = vec![];
+pub fn load_dungeons_from_yaml(path: String) -> HashMap<String, Dungeon> {
+    let mut dungeons: HashMap<String, Dungeon> = Default::default();
     let reader = std::fs::File::open(path).unwrap();
-    for dungeon_in in serde_yaml::from_reader::<std::fs::File, Vec<DungeonInput>>(reader).unwrap() {
-        dungeons.push(Dungeon::from(dungeon_in));
+    for (dungeon_key, dungeon_in) in
+        serde_yaml::from_reader::<std::fs::File, HashMap<String, DungeonInput>>(reader).unwrap()
+    {
+        dungeons.insert(dungeon_key, Dungeon::from(dungeon_in));
     }
     return dungeons;
 }
 
-pub fn _save_dungeons_to_yaml(path: String, dungeons: Vec<Dungeon>) -> Result<(), std::io::Error> {
+pub fn _save_dungeons_to_yaml(
+    path: String,
+    dungeons: HashMap<String, Dungeon>,
+) -> Result<(), std::io::Error> {
+    let writer = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(path)
+        .unwrap();
+
+    serde_yaml::to_writer(writer, &dungeons).unwrap();
+
+    return Ok(());
+}
+
+/// Defines HeroInput format for deserialization from CSV
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct HeroInput {
+    identifier: String,
+    class: String,
+    level: u8,
+    rank: u8,
+
+    hp: f64,
+    atk: f64,
+    def: f64,
+    eva: f64,
+    crit_chance: f64,
+    crit_mult: f64,
+    threat_rating: u16,
+    element_type: String,
+
+    hp_seeds: u8,
+    atk_seeds: u8,
+    def_seeds: u8,
+
+    skill_1: String,
+    skill_2: String,
+    skill_3: String,
+    skill_4: String,
+    skill_5: String,
+
+    equipment_equipped_1: String,
+    equipment_quality_1: String,
+    elements_socketed_1: String,
+    spirits_socketed_1: String,
+
+    equipment_equipped_2: String,
+    equipment_quality_2: String,
+    elements_socketed_2: String,
+    spirits_socketed_2: String,
+
+    equipment_equipped_3: String,
+    equipment_quality_3: String,
+    elements_socketed_3: String,
+    spirits_socketed_3: String,
+
+    equipment_equipped_4: String,
+    equipment_quality_4: String,
+    elements_socketed_4: String,
+    spirits_socketed_4: String,
+
+    equipment_equipped_5: String,
+    equipment_quality_5: String,
+    elements_socketed_5: String,
+    spirits_socketed_5: String,
+
+    equipment_equipped_6: String,
+    equipment_quality_6: String,
+    elements_socketed_6: String,
+    spirits_socketed_6: String,
+}
+
+impl HeroInput {
+    pub fn _round_floats_for_display(&self) -> HeroInput {
+        let mut hi2 = self.clone();
+        hi2.hp = round_to_2(hi2.hp);
+        hi2.atk = round_to_2(hi2.atk);
+        hi2.def = round_to_2(hi2.def);
+        hi2.eva = round_to_2(hi2.eva);
+        hi2.crit_chance = round_to_2(hi2.crit_chance);
+        hi2.crit_mult = round_to_2(hi2.crit_mult);
+        return hi2;
+    }
+}
+
+impl From<HeroInput> for Hero {
+    /// Create a hero from the input object performing type validation and calculating certain fields
+    fn from(item: HeroInput) -> Self {
+        let skills: [String; 5] = [
+            item.skill_1,
+            item.skill_2,
+            item.skill_3,
+            item.skill_4,
+            item.skill_5,
+        ];
+        let equipment_equipped: [String; 6] = [
+            item.equipment_equipped_1,
+            item.equipment_equipped_2,
+            item.equipment_equipped_3,
+            item.equipment_equipped_4,
+            item.equipment_equipped_5,
+            item.equipment_equipped_6,
+        ];
+        let equipment_quality: [String; 6] = [
+            item.equipment_quality_1,
+            item.equipment_quality_2,
+            item.equipment_quality_3,
+            item.equipment_quality_4,
+            item.equipment_quality_5,
+            item.equipment_quality_6,
+        ];
+        let elements_socketed: [String; 6] = [
+            item.elements_socketed_1,
+            item.elements_socketed_2,
+            item.elements_socketed_3,
+            item.elements_socketed_4,
+            item.elements_socketed_5,
+            item.elements_socketed_6,
+        ];
+        let spirits_socketed: [String; 6] = [
+            item.spirits_socketed_1,
+            item.spirits_socketed_2,
+            item.spirits_socketed_3,
+            item.spirits_socketed_4,
+            item.spirits_socketed_5,
+            item.spirits_socketed_6,
+        ];
+
+        return create_hero(
+            item.identifier,
+            item.class,
+            item.level,
+            item.rank,
+            item.hp,
+            item.atk,
+            item.def,
+            item.eva,
+            item.crit_chance,
+            item.crit_mult,
+            item.threat_rating,
+            item.element_type,
+            item.hp_seeds,
+            item.atk_seeds,
+            item.def_seeds,
+            skills,
+            equipment_equipped,
+            equipment_quality,
+            elements_socketed,
+            spirits_socketed,
+        );
+    }
+}
+
+pub fn create_hero_input(
+    identifier: String,
+    class: String,
+    level: u8,
+    rank: u8,
+
+    hp: f64,
+    atk: f64,
+    def: f64,
+    eva: f64,
+    crit_chance: f64,
+    crit_mult: f64,
+    threat_rating: u16,
+    element_type: String,
+
+    hp_seeds: u8,
+    atk_seeds: u8,
+    def_seeds: u8,
+
+    skills: [String; 5],
+
+    equipment_equipped: [String; 6],
+    equipment_quality: [String; 6],
+    elements_socketed: [String; 6],
+    spirits_socketed: [String; 6],
+) -> HeroInput {
+    return HeroInput {
+        identifier,
+        class,
+        level,
+        rank,
+
+        hp,
+        atk,
+        def,
+        eva,
+        crit_chance,
+        crit_mult,
+        threat_rating,
+        element_type,
+
+        hp_seeds,
+        atk_seeds,
+        def_seeds,
+
+        skill_1: skills[0].clone(),
+        skill_2: skills[1].clone(),
+        skill_3: skills[2].clone(),
+        skill_4: skills[3].clone(),
+        skill_5: skills[4].clone(),
+
+        equipment_equipped_1: equipment_equipped[0].clone(),
+        equipment_equipped_2: equipment_equipped[1].clone(),
+        equipment_equipped_3: equipment_equipped[2].clone(),
+        equipment_equipped_4: equipment_equipped[3].clone(),
+        equipment_equipped_5: equipment_equipped[4].clone(),
+        equipment_equipped_6: equipment_equipped[5].clone(),
+
+        equipment_quality_1: equipment_quality[0].clone(),
+        equipment_quality_2: equipment_quality[1].clone(),
+        equipment_quality_3: equipment_quality[2].clone(),
+        equipment_quality_4: equipment_quality[3].clone(),
+        equipment_quality_5: equipment_quality[4].clone(),
+        equipment_quality_6: equipment_quality[5].clone(),
+
+        elements_socketed_1: elements_socketed[0].clone(),
+        elements_socketed_2: elements_socketed[1].clone(),
+        elements_socketed_3: elements_socketed[2].clone(),
+        elements_socketed_4: elements_socketed[3].clone(),
+        elements_socketed_5: elements_socketed[4].clone(),
+        elements_socketed_6: elements_socketed[5].clone(),
+
+        spirits_socketed_1: spirits_socketed[0].clone(),
+        spirits_socketed_2: spirits_socketed[1].clone(),
+        spirits_socketed_3: spirits_socketed[2].clone(),
+        spirits_socketed_4: spirits_socketed[3].clone(),
+        spirits_socketed_5: spirits_socketed[4].clone(),
+        spirits_socketed_6: spirits_socketed[5].clone(),
+    };
+}
+
+pub fn _load_heroes_from_csv(
+    path: String,
+    bp_map: HashMap<String, Blueprint>,
+    hero_classes: HashMap<String, HeroClass>,
+) -> HashMap<String, Hero> {
+    let mut heroes: HashMap<String, Hero> = Default::default();
+    let mut reader = csv::Reader::from_path(path).unwrap();
+    for result in reader.deserialize() {
+        let hero_in: HeroInput = result.unwrap();
+        let identifier = hero_in.identifier.to_string();
+        let mut hero = Hero::from(hero_in);
+        hero.validate_equipment(&bp_map, &hero_classes);
+        hero.scale_by_class(&hero_classes);
+        heroes.insert(identifier, hero);
+    }
+    return heroes;
+}
+
+pub fn load_heroes_as_sim_heroes_from_csv(
+    path: String,
+    bp_map: HashMap<String, Blueprint>,
+    hero_classes: HashMap<String, HeroClass>,
+) -> HashMap<String, SimHero> {
+    let mut heroes: HashMap<String, SimHero> = Default::default();
+    let mut reader = csv::Reader::from_path(path).unwrap();
+    for result in reader.deserialize() {
+        let hero_in: HeroInput = result.unwrap();
+        let identifier = hero_in.identifier.to_string();
+        let mut hero = Hero::from(hero_in);
+        hero.validate_equipment(&bp_map, &hero_classes);
+        hero.scale_by_class(&hero_classes);
+        heroes.insert(identifier, SimHero::from(hero));
+    }
+    return heroes;
+}
+
+pub fn _save_heroes_to_csv(
+    path: String,
+    heroes: HashMap<String, Hero>,
+) -> Result<(), std::io::Error> {
+    let heroes_vec: Vec<Hero> = heroes.values().cloned().collect();
+    let already_exists = std::path::Path::new(&path).exists();
+    let writer = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(path)
+        .unwrap();
+
+    let mut wtr = csv::WriterBuilder::new()
+        .has_headers(!already_exists)
+        .from_writer(writer);
+
+    for hero in heroes_vec {
+        wtr.serialize(HeroInput::from(hero)._round_floats_for_display())?;
+    }
+
+    wtr.flush()?;
+    return Ok(());
+}
+
+pub fn load_hero_classes_from_yaml(path: String) -> HashMap<String, HeroClass> {
+    let mut hero_classes: HashMap<String, HeroClass> = Default::default();
+    let reader = std::fs::File::open(path).unwrap();
+    for (class_name, hero_class) in
+        serde_yaml::from_reader::<std::fs::File, HashMap<String, HeroClass>>(reader).unwrap()
+    {
+        hero_classes.insert(class_name, hero_class);
+    }
+    return hero_classes;
+}
+
+/// REPLACES hero_classes.yaml
+pub fn _save_hero_classes_to_yaml(
+    path: String,
+    hero_classes: HashMap<String, HeroClass>,
+) -> Result<(), std::io::Error> {
+    let already_exists = std::path::Path::new(&path).exists();
+    let mut hashmap: HashMap<String, HeroClass>;
+    if already_exists {
+        hashmap = load_hero_classes_from_yaml(path.to_string());
+        for (entry_name, entry) in hero_classes.iter() {
+            hashmap.insert(entry_name.to_string(), entry.clone());
+        }
+    } else {
+        hashmap = hero_classes;
+    }
+
     let writer = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
         .open(path)
-        .expect("Couldn't open file");
+        .unwrap();
 
-    serde_yaml::to_writer(writer, &dungeons).unwrap();
+    serde_yaml::to_writer(writer, &hashmap).unwrap();
 
     return Ok(());
 }
