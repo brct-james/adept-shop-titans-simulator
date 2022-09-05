@@ -17,12 +17,17 @@ use crate::dungeons::Dungeon;
 mod simulations;
 
 mod trials;
+use crate::sheet_processing::_get_hero_equipment_data;
 use crate::trials::{create_trial, Trial};
 
 mod inputs;
 use crate::inputs::{load_dungeons_from_yaml, load_heroes_from_csv};
 
 mod decimals;
+
+mod hero_builder;
+
+mod sheet_processing;
 
 /// Defines valid study types:
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
@@ -139,4 +144,9 @@ fn main() {
         avg_dmg_dealt_0,
         avg_encounter_hp_remaining,
     );
+
+    let bp_map = _get_hero_equipment_data(String::from(
+        "data_sheets/blueprints_v_10.2.1_slash_1.0.1.773.tsv",
+    ));
+    println!("{:#?}", bp_map["Katana"]);
 }

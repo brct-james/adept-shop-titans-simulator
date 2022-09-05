@@ -189,3 +189,5 @@ Hemma_bonus
 - trial will then have another csv that selects dungeons from their own csv by identifier
 
 - redo readme
+
+- tammara is giving HUGE crits - like 7.7m damage, I am assuming that is because I input her stats wrong, check once hero builder is done
