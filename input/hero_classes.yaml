@@ -148,7 +148,7 @@ Warden:
   - Forest Spirit
 Mercenary:
   class: Mercenary
-  prerequisite: Titan Soul
+  prerequisite: Titan Soul (Soldier)
   gold_hire_cost: 0
   gem_hire_cost: 0
   base_hp:
@@ -445,7 +445,7 @@ Berserker:
   - ''
 Arch Druid:
   class: Arch Druid
-  prerequisite: Titan Soul
+  prerequisite: Titan Soul (Druid)
   gold_hire_cost: 0
   gem_hire_cost: 0
   base_hp:
