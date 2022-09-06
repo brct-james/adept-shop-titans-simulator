@@ -190,13 +190,29 @@ impl Hero {
 
     pub fn calculate_innate_tier(&self) -> u8 {
         let innate_tier = 0u8;
-
+        // requires skills (lookup element requirements there)
         return innate_tier;
     }
 
     pub fn calculate_element_qty(&self) -> u16 {
-        let element_qty = 0u16;
-
+        let mut element_qty = 0u16;
+        for element_string in &self.elements_socketed {
+            let split_vec: Vec<&str> = element_string.split(" ").collect();
+            if split_vec.len() < 2 {
+                panic!("Element {} must conform to format [type] [grade: 1-4]", element_string);
+            }
+            let element = split_vec[0];
+            let grade = split_vec[1];
+            if element == self.element_type {
+                match grade {
+                    "1" => element_qty += 5,
+                    "2" => element_qty += 10,
+                    "3" => element_qty += 15,
+                    "4" => element_qty += 25,
+                    _ => panic!("Unknown element grade {}", grade),
+                }
+            }
+        }
         return element_qty;
     }
 

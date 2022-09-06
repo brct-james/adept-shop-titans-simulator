@@ -207,7 +207,7 @@ Hemma_bonus
 
 6. In hero builder script ensure scaling covers all things that need to scale AND that the Hero cant somehow bypass scaling AND that things like eva and crit chance come from HeroClass AND throughough elementType should be converted from string to ElementType at least once to validate AND write a method to validate skills later
 
-7. Insert all the remaining hero classes into yaml...
+7. Insert all the remaining hero classes into yaml... red is DONE, arch druid is DONE
 
 ### Goals:
 
