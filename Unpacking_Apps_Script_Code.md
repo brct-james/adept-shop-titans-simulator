@@ -207,7 +207,7 @@ Hemma_bonus
 
 6. In hero builder script ensure scaling covers all things that need to scale AND that the Hero cant somehow bypass scaling AND that things like eva and crit chance come from HeroClass AND throughough elementType should be converted from string to ElementType at least once to validate AND write a method to validate skills later
 
-7. Insert all the remaining hero classes into yaml... ALSO the Soldier is currently using the Arch Druid stats... Replace with their correct stats!
+7. Insert all the remaining hero classes into yaml...
 
 ### Goals:
 
@@ -216,3 +216,5 @@ Hemma_bonus
 2. Compare classes relative to each other - both at peak performance and with 'good enough' skills
 
 3. Team combinations - what are the optimal classes to group with each other
+
+4. Eventually a website where you can input the skills for a given hero and it will tell you the rank relative to the maximum for that class based on our simulation data. Could also suggest which skills should be replaced and what your best replacement options are
