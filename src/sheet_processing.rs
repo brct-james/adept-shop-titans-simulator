@@ -1,6 +1,85 @@
 use std::collections::HashMap;
 
 use crate::equipment::{create_blueprint, Blueprint};
+use crate::skills::{create_hero_skill, HeroSkill};
+
+/// Get the info on hero skills
+pub fn _get_hero_skills_data(
+    path: String,
+) -> (HashMap<String, String>, HashMap<String, HeroSkill>) {
+    let mut skill_tier_1_name_map: HashMap<String, String> = Default::default();
+    let mut hs_map: HashMap<String, HeroSkill> = Default::default();
+
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .has_headers(true)
+        .from_path(path)
+        .unwrap();
+
+    let headers = reader.headers().unwrap().clone();
+    for result in reader.records() {
+        let record = result.unwrap();
+
+        let mut classes_allowed: Vec<String> = Default::default();
+
+        for col in 25..61usize {
+            if record[col]
+                .to_string()
+                .to_lowercase()
+                .parse::<bool>()
+                .unwrap()
+            {
+                classes_allowed.push(headers[col].to_string());
+            }
+        }
+
+        skill_tier_1_name_map.insert(
+            record[1].to_string(),
+            f!("{} T{}", record[6].to_string(), record[3].to_string()),
+        );
+
+        hs_map.insert(
+            record[1].to_string(),
+            create_hero_skill(
+                record[1].to_string(),
+                record[2].to_string(),
+                record[3].to_string().parse::<u8>().unwrap_or_default(),
+                record[4].to_string(),
+                record[5].to_string().parse::<u16>().unwrap_or_default(),
+                record[6].to_string(),
+                record[7]
+                    .to_string()
+                    .to_lowercase()
+                    .parse::<bool>()
+                    .unwrap(),
+                record[8].to_string(),
+                record[9].to_string().parse::<f64>().unwrap_or_default(),
+                record[10].to_string().parse::<f64>().unwrap_or_default(),
+                record[11].to_string().parse::<f64>().unwrap_or_default(),
+                record[12].to_string().parse::<f64>().unwrap_or_default(),
+                record[13].to_string().parse::<f64>().unwrap_or_default(),
+                record[14].to_string().parse::<f64>().unwrap_or_default(),
+                record[15].to_string().parse::<f64>().unwrap_or_default(),
+                record[16].to_string().parse::<f64>().unwrap_or_default(),
+                record[17].to_string().parse::<f64>().unwrap_or_default(),
+                record[18].to_string().parse::<f64>().unwrap_or_default(),
+                record[19].to_string().parse::<f64>().unwrap_or_default(),
+                record[20].to_string().parse::<f64>().unwrap_or_default(),
+                record[21].to_string().parse::<f64>().unwrap_or_default(),
+                record[22].to_string().parse::<f64>().unwrap_or_default(),
+                record[23].to_string().parse::<f64>().unwrap_or_default(),
+                record[24]
+                    .to_string()
+                    .split(';')
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<String>>(),
+                classes_allowed,
+            ),
+        );
+    }
+
+    return (skill_tier_1_name_map, hs_map);
+}
 
 /// Get the info on hero equipment (e.g. atk, def, etc.) from the Blueprints tab of the Official ST Sheet
 pub fn _get_hero_equipment_data(path: String) -> HashMap<String, Blueprint> {

@@ -199,7 +199,10 @@ impl Hero {
         for element_string in &self.elements_socketed {
             let split_vec: Vec<&str> = element_string.split(" ").collect();
             if split_vec.len() < 2 {
-                panic!("Element {} must conform to format [type] [grade: 1-4]", element_string);
+                panic!(
+                    "Element {} must conform to format [type] [grade: 1-4]",
+                    element_string
+                );
             }
             let element = split_vec[0];
             let grade = split_vec[1];

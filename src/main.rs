@@ -22,7 +22,7 @@ use crate::dungeons::Dungeon;
 mod simulations;
 
 mod trials;
-use crate::sheet_processing::_get_hero_equipment_data;
+use crate::sheet_processing::{_get_hero_equipment_data, _get_hero_skills_data};
 use crate::trials::{create_trial, Trial};
 
 mod inputs;
@@ -32,6 +32,8 @@ use crate::inputs::{
 };
 
 mod decimals;
+
+mod skills;
 
 mod hero_builder;
 
@@ -201,6 +203,10 @@ fn main() {
     //     HashMap::from([(String::from("Tammy"), new_hero)]),
     // )
     // .unwrap();
+
+    let (_skill_tier_1_name_map, _hs_map) = _get_hero_skills_data(String::from(
+        "data_sheets/greensim_hero_skills_v_10.2.1_slash_1.0.1.773.tsv",
+    ));
 
     let bp_map = _get_hero_equipment_data(String::from(
         "data_sheets/blueprints_v_10.2.1_slash_1.0.1.773.tsv",
