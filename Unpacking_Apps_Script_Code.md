@@ -201,13 +201,17 @@ Hemma_bonus
 
 3. ~~Pull gear directly from data spreadsheet~~
 
-4. Either pull skills from data spreadsheet and parse, or manually create skill sheet (remember some skills are class restricted)
+4. Either pull skills from data spreadsheet and parse, or manually create skill sheet (remember some skills are class restricted, and some skills are mutually exclusive)
 
 5. Validate results for extreme and boss encounters, as well as cinderlake normals
 
 6. In hero builder script ensure scaling covers all things that need to scale AND that the Hero cant somehow bypass scaling AND that things like eva and crit chance come from HeroClass AND throughough elementType should be converted from string to ElementType at least once to validate AND write a method to validate skills later
 
 7. Insert all the remaining hero classes into yaml... red is DONE, arch druid is DONE
+
+8. Automatic translation between skill tiers / names (Input/Output options for both 'Cleave T4' and 'WhateverTheT4NameIs' and for output only just 'Cleave' where appropriate for builds and such)
+
+9. When importing skills, ensure skill_tier == 1 if tier_1_name == skill_name, that there are only 4 entries per tier_1_name variant, etc.
 
 ### Goals:
 

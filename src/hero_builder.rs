@@ -230,13 +230,13 @@ impl Hero {
 
     pub fn calculate_attack_modifier(&self) -> f64 {
         let attack_modifier = 0.0f64;
-
+        // needs skills
         return attack_modifier;
     }
 
     pub fn calculate_defense_modifier(&self) -> f64 {
         let defense_modifier = 0.0f64;
-
+        // needs skills
         return defense_modifier;
     }
 
