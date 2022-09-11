@@ -34,6 +34,34 @@ impl HeroSkill {
     pub fn _get_type(&self) -> String {
         return self.type_.to_string();
     }
+
+    pub fn get_attack_percent(&self) -> f64 {
+        return self.attack_percent.clone();
+    }
+
+    pub fn _get_attack_value(&self) -> f64 {
+        return self.attack_value.clone();
+    }
+
+    pub fn get_defense_percent(&self) -> f64 {
+        return self.defense_percent.clone();
+    }
+
+    pub fn _get_bonus_stats_from_all_equipment_percent(&self) -> f64 {
+        return self.bonus_stats_from_all_equipment_percent.clone();
+    }
+
+    pub fn _get_attack_with_item_percent(&self) -> f64 {
+        return self.attack_with_item_percent.clone();
+    }
+
+    pub fn _get_defense_with_item_percent(&self) -> f64 {
+        return self.defense_with_item_percent.clone();
+    }
+
+    pub fn _get_item_types(&self) -> Vec<String> {
+        return self.item_types.clone();
+    }
 }
 
 pub fn create_hero_skill(
@@ -136,6 +164,26 @@ impl InnateSkill {
 
     pub fn get_element_qty_req(&self) -> u16 {
         return self.element_qty_req.clone();
+    }
+
+    pub fn get_attack_percent(&self) -> f64 {
+        return self.attack_percent.clone();
+    }
+
+    pub fn get_defense_percent(&self) -> f64 {
+        return self.defense_percent.clone();
+    }
+
+    pub fn _get_attack_with_item_percent(&self) -> f64 {
+        return self.attack_with_item_percent.clone();
+    }
+
+    pub fn _get_defense_with_item_percent(&self) -> f64 {
+        return self.defense_with_item_percent.clone();
+    }
+
+    pub fn _get_item_types(&self) -> Vec<String> {
+        return self.item_types.clone();
     }
 }
 

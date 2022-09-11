@@ -217,6 +217,32 @@ Hemma_bonus
 
 11. Ensure class bonuses are applied correctly in sim: Chieftain threat -> attack mod, mercenary + effect from champ skills, lord protect, samurai/daimyo auto evade & first hit crit ignoring element barriers, berserker/jarl bonuses at hp thresholds, trickster polonia stuff, conq consecutive crits, wanderer max eva, ninja/sensei bonuses till damaged and recovery, dancer/acrobat guaranteed crits, cleric autosurvive, spellblade/knight use any element but 30% power against barriers, geo/astramancer attack per point in any element
 
+12. Decide whether users enter pre-skill atk/def/eva/crit/etc in hero_builder... Hero builder should actually just take class, level, skills, equipment, right? So ultimately none of the above
+
+13. The following should help with calculating buffs to item stats, I wrote this for the atk/def mod section but this is a per-equip bonus not hero-wide
+
+```rust
+let skill_item_types = skill.get_item_types();
+
+let mut blueprints: Vec<Blueprint> = Default::default();
+for equip_name in &self.equipment_equipped {
+    blueprints.push(bp_map[equip_name].clone());
+}
+
+if skill_item_types.len() > 0 {
+    // Has bonuses associated with atleast one item type
+    for itype in skill_item_types {
+        for blueprint in &blueprints {
+            if blueprint.get_type() == itype {
+                // Have that type equipped, apply bonus(es)
+                attack_modifier += skill.get_attack_with_item_percent();
+                break;
+            }
+        }
+    }
+}
+```
+
 ### Goals:
 
 1. Rank skill loadouts for individual classes (develop a ranking criteria or relative scoring metric, OR use survival rate but automatically retry anything > 95% at the next highest difficulty until the entire set of builds is ordered correctly and unambiguously)

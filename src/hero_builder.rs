@@ -7,7 +7,7 @@ use crate::{
     equipment::Blueprint,
     heroes::{create_sim_hero, SimHero},
     inputs::{create_hero_input, HeroInput},
-    skills::InnateSkill,
+    skills::{InnateSkill, HeroSkill},
 };
 
 /// Defines a HeroClass that contains info on base stats, allowed equipment, etc.
@@ -90,6 +90,9 @@ pub struct Hero {
     threat_rating: u16,
     element_type: String,
 
+    atk_modifier: f64,
+    def_modifier: f64,
+
     hp_seeds: u8,
     atk_seeds: u8,
     def_seeds: u8,
@@ -118,6 +121,9 @@ pub fn create_hero(
     threat_rating: u16,
     element_type: String,
 
+    atk_modifier: f64,
+    def_modifier: f64,
+
     hp_seeds: u8,
     atk_seeds: u8,
     def_seeds: u8,
@@ -144,6 +150,9 @@ pub fn create_hero(
         crit_mult,
         threat_rating,
         element_type,
+
+        atk_modifier,
+        def_modifier,
 
         hp_seeds,
         atk_seeds,
@@ -192,13 +201,7 @@ impl Hero {
         }
     }
 
-    pub fn calculate_innate_tier(
-        &mut self,
-        class_innate_skill_names_map: &HashMap<String, String>,
-        innate_skill_map: &HashMap<String, InnateSkill>,
-    ) {
-        let element_qty = self.calculate_element_qty();
-
+    pub fn calculate_innate_skill_name(&self, class_innate_skill_names_map: &HashMap<String, String>) -> String {
         if !class_innate_skill_names_map.contains_key(&self.class) {
             // Class not found in map
             panic!(
@@ -208,6 +211,16 @@ impl Hero {
         }
 
         let innate_skill = class_innate_skill_names_map[&self.class].clone();
+        return innate_skill;
+    }
+
+    pub fn calculate_innate_tier(
+        &mut self,
+        class_innate_skill_names_map: &HashMap<String, String>,
+        innate_skill_map: &HashMap<String, InnateSkill>,
+    ) {
+        let element_qty = self.calculate_element_qty();
+        let innate_skill = self.calculate_innate_skill_name(class_innate_skill_names_map);
 
         let mut innate_skill_variants: Vec<&InnateSkill> = innate_skill_map
             .values()
@@ -262,16 +275,58 @@ impl Hero {
         return spirit_qty;
     }
 
-    pub fn calculate_attack_modifier(&self) -> f64 {
-        let attack_modifier = 0.0f64;
-        // needs skills
-        return attack_modifier;
+    pub fn calculate_attack_modifier(
+        &mut self,
+        hero_skill_map: &HashMap<String, HeroSkill>,
+        class_innate_skill_names_map: &HashMap<String, String>,
+        innate_skill_map: &HashMap<String, InnateSkill>,
+    ) {
+        let mut attack_modifier = 0.0f64;
+        
+        let innate_skill_name = self.calculate_innate_skill_name(class_innate_skill_names_map);
+        let innate_skill = innate_skill_map[&innate_skill_name].clone();
+
+        attack_modifier += innate_skill.get_attack_percent();
+
+        for skill_name in &self.skills {
+            if !hero_skill_map.contains_key(skill_name) {
+                panic!(
+                    "Skill {} could not be found in keys for hero_skill_map",
+                    skill_name
+                );
+            }
+            let skill = hero_skill_map[skill_name].clone();
+            attack_modifier += skill.get_attack_percent();
+        }
+
+        self.atk_modifier = attack_modifier;
     }
 
-    pub fn calculate_defense_modifier(&self) -> f64 {
-        let defense_modifier = 0.0f64;
-        // needs skills
-        return defense_modifier;
+    pub fn calculate_defense_modifier(
+        &mut self,
+        hero_skill_map: &HashMap<String, HeroSkill>,
+        class_innate_skill_names_map: &HashMap<String, String>,
+        innate_skill_map: &HashMap<String, InnateSkill>,
+    ) {
+        let mut defense_modifier = 0.0f64;
+        
+        let innate_skill_name = self.calculate_innate_skill_name(class_innate_skill_names_map);
+        let innate_skill = innate_skill_map[&innate_skill_name].clone();
+
+        defense_modifier += innate_skill.get_defense_percent();
+
+        for skill_name in &self.skills {
+            if !hero_skill_map.contains_key(skill_name) {
+                panic!(
+                    "Skill {} could not be found in keys for hero_skill_map",
+                    skill_name
+                );
+            }
+            let skill = hero_skill_map[skill_name].clone();
+            defense_modifier += skill.get_defense_percent();
+        }
+
+        self.def_modifier = defense_modifier;
     }
 
     pub fn scale_by_class(&mut self, hero_classes: &HashMap<String, HeroClass>) {
@@ -329,8 +384,8 @@ impl From<Hero> for SimHero {
             i2.calculate_spirit_qty(String::from("Shark")),
             i2.calculate_spirit_qty(String::from("Dinosaur")),
             i2.calculate_spirit_qty(String::from("Mundra")),
-            i2.calculate_attack_modifier(),
-            i2.calculate_defense_modifier(),
+            item.atk_modifier,
+            item.def_modifier,
         )
         .unwrap();
     }
