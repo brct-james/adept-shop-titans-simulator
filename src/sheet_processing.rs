@@ -6,8 +6,13 @@ use crate::skills::{create_hero_skill, create_innate_skill, HeroSkill, InnateSki
 /// Get the info on innate skills
 pub fn _get_innate_skills_data(
     path: String,
-) -> (HashMap<String, String>, HashMap<String, InnateSkill>) {
+) -> (
+    HashMap<String, String>,
+    HashMap<String, String>,
+    HashMap<String, InnateSkill>,
+) {
     let mut skill_tier_1_name_map: HashMap<String, String> = Default::default();
+    let mut class_skill_names_map: HashMap<String, String> = Default::default();
     let mut hs_map: HashMap<String, InnateSkill> = Default::default();
 
     let mut reader = csv::ReaderBuilder::new()
@@ -30,6 +35,9 @@ pub fn _get_innate_skills_data(
                 .unwrap()
             {
                 classes_allowed.push(headers[col].to_string());
+                if record[3].to_string().parse::<u8>().unwrap_or_default() == 1 {
+                    class_skill_names_map.insert(headers[col].to_string(), record[1].to_string());
+                }
             }
         }
 
@@ -77,7 +85,7 @@ pub fn _get_innate_skills_data(
         );
     }
 
-    return (skill_tier_1_name_map, hs_map);
+    return (skill_tier_1_name_map, class_skill_names_map, hs_map);
 }
 
 /// Get the info on hero skills

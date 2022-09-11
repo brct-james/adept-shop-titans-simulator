@@ -7,6 +7,7 @@ use crate::{
     equipment::Blueprint,
     heroes::{create_sim_hero, SimHero},
     inputs::{create_hero_input, HeroInput},
+    skills::InnateSkill,
 };
 
 /// Defines a HeroClass that contains info on base stats, allowed equipment, etc.
@@ -78,6 +79,7 @@ pub struct Hero {
     class: String,
     level: u8,
     rank: u8,
+    innate_tier: u8,
 
     hp: f64,
     atk: f64,
@@ -92,7 +94,7 @@ pub struct Hero {
     atk_seeds: u8,
     def_seeds: u8,
 
-    skills: [String; 5],
+    skills: [String; 4],
 
     equipment_equipped: [String; 6],
     equipment_quality: [String; 6],
@@ -105,6 +107,7 @@ pub fn create_hero(
     class: String,
     level: u8,
     rank: u8,
+    innate_tier: u8,
 
     hp: f64,
     atk: f64,
@@ -119,7 +122,7 @@ pub fn create_hero(
     atk_seeds: u8,
     def_seeds: u8,
 
-    skills: [String; 5],
+    skills: [String; 4],
 
     equipment_equipped: [String; 6],
     equipment_quality: [String; 6],
@@ -131,6 +134,7 @@ pub fn create_hero(
         class,
         level,
         rank,
+        innate_tier,
 
         hp,
         atk,
@@ -188,10 +192,37 @@ impl Hero {
         }
     }
 
-    pub fn calculate_innate_tier(&self) -> u8 {
-        let innate_tier = 0u8;
-        // requires skills (lookup element requirements there)
-        return innate_tier;
+    pub fn calculate_innate_tier(
+        &mut self,
+        class_innate_skill_names_map: &HashMap<String, String>,
+        innate_skill_map: &HashMap<String, InnateSkill>,
+    ) {
+        let element_qty = self.calculate_element_qty();
+
+        if !class_innate_skill_names_map.contains_key(&self.class) {
+            // Class not found in map
+            panic!(
+                "Class {} could not be found in keys for class_innate_skill_names_map",
+                self.class
+            );
+        }
+
+        let innate_skill = class_innate_skill_names_map[&self.class].clone();
+
+        let mut innate_skill_variants: Vec<&InnateSkill> = innate_skill_map
+            .values()
+            .filter(|is| {
+                is.get_tier_1_name() == innate_skill && is.get_element_qty_req() < element_qty
+            })
+            .collect::<Vec<&InnateSkill>>();
+
+        innate_skill_variants.sort_unstable_by_key(|is| is.get_skill_tier());
+
+        println!("Innate_Skill_Variants: {:#?}", innate_skill_variants);
+
+        let innate_skill_info = innate_skill_variants[innate_skill_variants.len() - 1];
+
+        self.innate_tier = innate_skill_info.get_skill_tier();
     }
 
     pub fn calculate_element_qty(&self) -> u16 {
@@ -283,7 +314,7 @@ impl From<Hero> for SimHero {
             item.class,
             item.level,
             item.rank,
-            i2.calculate_innate_tier(),
+            item.innate_tier,
             item.hp,
             item.atk,
             item.def,

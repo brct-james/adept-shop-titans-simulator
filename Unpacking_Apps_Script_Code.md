@@ -213,7 +213,7 @@ Hemma_bonus
 
 9. When importing skills, ensure skill_tier == 1 if tier_1_name == skill_name, that there are only 4 entries per tier_1_name variant, etc.
 
-10. Separate logic for importing/creating champions as they gain additional bonuses by rank which also determines innate tier
+10. Separate logic for importing/creating champions as they gain additional bonuses by rank which also determines innate tier (they dont use hero_builder)
 
 11. Ensure class bonuses are applied correctly in sim: Chieftain threat -> attack mod, mercenary + effect from champ skills, lord protect, samurai/daimyo auto evade & first hit crit ignoring element barriers, berserker/jarl bonuses at hp thresholds, trickster polonia stuff, conq consecutive crits, wanderer max eva, ninja/sensei bonuses till damaged and recovery, dancer/acrobat guaranteed crits, cleric autosurvive, spellblade/knight use any element but 30% power against barriers, geo/astramancer attack per point in any element
 

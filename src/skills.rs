@@ -125,6 +125,18 @@ impl InnateSkill {
     pub fn _get_type(&self) -> String {
         return self.type_.to_string();
     }
+
+    pub fn get_skill_tier(&self) -> u8 {
+        return self.skill_tier.clone();
+    }
+
+    pub fn get_tier_1_name(&self) -> String {
+        return self.tier_1_name.to_string();
+    }
+
+    pub fn get_element_qty_req(&self) -> u16 {
+        return self.element_qty_req.clone();
+    }
 }
 
 pub fn create_innate_skill(

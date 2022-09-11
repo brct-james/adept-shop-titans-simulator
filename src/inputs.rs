@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::decimals::{_round_array_of_len_4_to_2, round_to_2};
 use crate::equipment::{Blueprint, ElementType};
 use crate::hero_builder::{create_hero, Hero, HeroClass};
+use crate::skills::{HeroSkill, InnateSkill};
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -332,7 +333,6 @@ pub struct HeroInput {
     skill_2: String,
     skill_3: String,
     skill_4: String,
-    skill_5: String,
 
     equipment_equipped_1: String,
     equipment_quality_1: String,
@@ -381,13 +381,7 @@ impl HeroInput {
 impl From<HeroInput> for Hero {
     /// Create a hero from the input object performing type validation and calculating certain fields
     fn from(item: HeroInput) -> Self {
-        let skills: [String; 5] = [
-            item.skill_1,
-            item.skill_2,
-            item.skill_3,
-            item.skill_4,
-            item.skill_5,
-        ];
+        let skills: [String; 4] = [item.skill_1, item.skill_2, item.skill_3, item.skill_4];
         let equipment_equipped: [String; 6] = [
             item.equipment_equipped_1,
             item.equipment_equipped_2,
@@ -426,6 +420,7 @@ impl From<HeroInput> for Hero {
             item.class,
             item.level,
             item.rank,
+            0,
             item.hp,
             item.atk,
             item.def,
@@ -465,7 +460,7 @@ pub fn create_hero_input(
     atk_seeds: u8,
     def_seeds: u8,
 
-    skills: [String; 5],
+    skills: [String; 4],
 
     equipment_equipped: [String; 6],
     equipment_quality: [String; 6],
@@ -495,7 +490,6 @@ pub fn create_hero_input(
         skill_2: skills[1].clone(),
         skill_3: skills[2].clone(),
         skill_4: skills[3].clone(),
-        skill_5: skills[4].clone(),
 
         equipment_equipped_1: equipment_equipped[0].clone(),
         equipment_equipped_2: equipment_equipped[1].clone(),
@@ -549,6 +543,9 @@ pub fn load_heroes_as_sim_heroes_from_csv(
     path: String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
+    hero_skill_map: HashMap<String, HeroSkill>,
+    class_innate_skill_names_map: HashMap<String, String>,
+    innate_skill_map: HashMap<String, InnateSkill>,
 ) -> HashMap<String, SimHero> {
     let mut heroes: HashMap<String, SimHero> = Default::default();
     let mut reader = csv::Reader::from_path(path).unwrap();
@@ -558,6 +555,7 @@ pub fn load_heroes_as_sim_heroes_from_csv(
         let mut hero = Hero::from(hero_in);
         hero.validate_equipment(&bp_map, &hero_classes);
         hero.scale_by_class(&hero_classes);
+        hero.calculate_innate_tier(&class_innate_skill_names_map, &innate_skill_map);
         heroes.insert(identifier, SimHero::from(hero));
     }
     return heroes;

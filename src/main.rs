@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 // use std::thread;
 // use std::time::Duration;
 use log::info;
+use skills::{HeroSkill, InnateSkill};
 
 #[macro_use]
 extern crate fstrings;
@@ -63,11 +64,17 @@ struct Study {
 fn load_sim_heroes(
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
+    hero_skill_map: HashMap<String, HeroSkill>,
+    class_innate_skill_names_map: HashMap<String, String>,
+    innate_skill_map: HashMap<String, InnateSkill>,
 ) -> HashMap<String, SimHero> {
     let heroes_from_builder = load_heroes_as_sim_heroes_from_csv(
         String::from("input/hero_builder.csv"),
         bp_map,
         hero_classes,
+        hero_skill_map,
+        class_innate_skill_names_map,
+        innate_skill_map,
     );
     // _save_sim_heroes_to_csv(String::from("input/heroes.csv"), loaded_heroes_from_builder).unwrap();
 
@@ -160,7 +167,6 @@ fn main() {
     //     0,
     //     0,
     //     [
-    //         String::from("Primal Magic"),
     //         String::from("Shining Blade"),
     //         String::from("Mana Shield"),
     //         String::from("Electric Arc"),
@@ -206,18 +212,25 @@ fn main() {
     // )
     // .unwrap();
 
-    let (_hero_skill_tier_1_name_map, _hero_skill_map) = _get_hero_skills_data(String::from(
+    let (_hero_skill_tier_1_name_map, hero_skill_map) = _get_hero_skills_data(String::from(
         "data_sheets/greensim_hero_skills_v_10.2.1_slash_1.0.1.773.tsv",
     ));
 
-    let (_innate_skill_tier_1_name_map, _innate_skill_map) = _get_innate_skills_data(String::from(
-        "data_sheets/greensim_innate_skills_v_10.2.1_slash_1.0.1.773.tsv",
-    ));
+    let (_innate_skill_tier_1_name_map, class_innate_skill_names_map, innate_skill_map) =
+        _get_innate_skills_data(String::from(
+            "data_sheets/greensim_innate_skills_v_10.2.1_slash_1.0.1.773.tsv",
+        ));
 
     let bp_map = _get_hero_equipment_data(String::from(
         "data_sheets/blueprints_v_10.2.1_slash_1.0.1.773.tsv",
     ));
-    let heroes = load_sim_heroes(bp_map, hero_classes);
+    let heroes = load_sim_heroes(
+        bp_map,
+        hero_classes,
+        hero_skill_map,
+        class_innate_skill_names_map,
+        innate_skill_map,
+    );
 
     let team = create_team(vec![heroes["Tammy"].clone()], None).unwrap();
 
