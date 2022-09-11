@@ -201,7 +201,7 @@ Hemma_bonus
 
 3. ~~Pull gear directly from data spreadsheet~~
 
-4. Either pull skills from data spreadsheet and parse, or manually create skill sheet (remember some skills are class restricted, and some skills are mutually exclusive)
+4. Either pull skills from data spreadsheet and parse, or manually create skill sheet (remember some skills are class restricted, and some skills are mutually exclusive) - hero skills are in, but innates are not imported yet
 
 5. Validate results for extreme and boss encounters, as well as cinderlake normals
 
@@ -212,6 +212,10 @@ Hemma_bonus
 8. Automatic translation between skill tiers / names (Input/Output options for both 'Cleave T4' and 'WhateverTheT4NameIs' and for output only just 'Cleave' where appropriate for builds and such)
 
 9. When importing skills, ensure skill_tier == 1 if tier_1_name == skill_name, that there are only 4 entries per tier_1_name variant, etc.
+
+10. Separate logic for importing/creating champions as they gain additional bonuses by rank which also determines innate tier
+
+11. Ensure class bonuses are applied correctly in sim: Chieftain threat -> attack mod, mercenary + effect from champ skills, lord protect, samurai/daimyo auto evade & first hit crit ignoring element barriers, berserker/jarl bonuses at hp thresholds, trickster polonia stuff, conq consecutive crits, wanderer max eva, ninja/sensei bonuses till damaged and recovery, dancer/acrobat guaranteed crits, cleric autosurvive, spellblade/knight use any element but 30% power against barriers, geo/astramancer attack per point in any element
 
 ### Goals:
 

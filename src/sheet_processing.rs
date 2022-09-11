@@ -1,7 +1,84 @@
 use std::collections::HashMap;
 
 use crate::equipment::{create_blueprint, Blueprint};
-use crate::skills::{create_hero_skill, HeroSkill};
+use crate::skills::{create_hero_skill, create_innate_skill, HeroSkill, InnateSkill};
+
+/// Get the info on innate skills
+pub fn _get_innate_skills_data(
+    path: String,
+) -> (HashMap<String, String>, HashMap<String, InnateSkill>) {
+    let mut skill_tier_1_name_map: HashMap<String, String> = Default::default();
+    let mut hs_map: HashMap<String, InnateSkill> = Default::default();
+
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .has_headers(true)
+        .from_path(path)
+        .unwrap();
+
+    let headers = reader.headers().unwrap().clone();
+    for result in reader.records() {
+        let record = result.unwrap();
+
+        let mut classes_allowed: Vec<String> = Default::default();
+
+        for col in 24..60usize {
+            if record[col]
+                .to_string()
+                .to_lowercase()
+                .parse::<bool>()
+                .unwrap()
+            {
+                classes_allowed.push(headers[col].to_string());
+            }
+        }
+
+        skill_tier_1_name_map.insert(
+            record[1].to_string(),
+            f!("{} T{}", record[6].to_string(), record[3].to_string()),
+        );
+
+        hs_map.insert(
+            record[1].to_string(),
+            create_innate_skill(
+                record[1].to_string(),
+                record[2].to_string(),
+                record[3].to_string().parse::<u8>().unwrap_or_default(),
+                // 4: description
+                record[5].to_string().parse::<u16>().unwrap_or_default(),
+                record[6].to_string(),
+                record[7]
+                    .to_string()
+                    .to_lowercase()
+                    .parse::<bool>()
+                    .unwrap(),
+                record[8].to_string().parse::<f64>().unwrap_or_default(),
+                record[9].to_string().parse::<f64>().unwrap_or_default(),
+                record[10].to_string().parse::<f64>().unwrap_or_default(),
+                record[11].to_string().parse::<f64>().unwrap_or_default(),
+                record[12].to_string().parse::<f64>().unwrap_or_default(),
+                record[13].to_string().parse::<f64>().unwrap_or_default(),
+                record[14].to_string().parse::<f64>().unwrap_or_default(),
+                record[15].to_string().parse::<f64>().unwrap_or_default(),
+                record[16].to_string().parse::<f64>().unwrap_or_default(),
+                record[17].to_string().parse::<f64>().unwrap_or_default(),
+                record[18].to_string().parse::<f64>().unwrap_or_default(),
+                record[19].to_string().parse::<f64>().unwrap_or_default(),
+                record[20].to_string().parse::<f64>().unwrap_or_default(),
+                record[21].to_string().parse::<f64>().unwrap_or_default(),
+                record[22].to_string().parse::<f64>().unwrap_or_default(),
+                record[23]
+                    .to_string()
+                    .split(';')
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<String>>(),
+                classes_allowed,
+            ),
+        );
+    }
+
+    return (skill_tier_1_name_map, hs_map);
+}
 
 /// Get the info on hero skills
 pub fn _get_hero_skills_data(
