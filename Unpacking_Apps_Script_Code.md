@@ -243,6 +243,20 @@ if skill_item_types.len() > 0 {
 }
 ```
 
+14. Ensure item quality bonuses are applied when calculating bonus stats from equipment, as well as spirit and element bonuses to base stats (besides the special effects) (also make sure innate elements and such dont do weird things here...)
+
+15. Script should be able to handle testing variants of heros as well (e.g. with different equips) with the same easy configuration steps
+
+16. Ideally some kind of resume after crash functionality could be nice particularly for larger trialsets
+
+17. Need a way to lock skills or gear from being permuted - so for example can test bow skill line vs wand skill line
+
+18. Additionally, auto-combinations should exclude skills that dont match the equipped gear - if there is no dagger equipped then dagger master should be skipped
+
+19. Perhaps it would be good to have a way to restrict what skills/equipment is available - for example restricting to T10 gear and below or removing a set of X skills for some reason. Goes hand in hand with locking stuff I think
+
+20. Make sure rhino/mammoth threat is added somewhere
+
 ### Goals:
 
 1. Rank skill loadouts for individual classes (develop a ranking criteria or relative scoring metric, OR use survival rate but automatically retry anything > 95% at the next highest difficulty until the entire set of builds is ordered correctly and unambiguously)
@@ -252,3 +266,9 @@ if skill_item_types.len() > 0 {
 3. Team combinations - what are the optimal classes to group with each other
 
 4. Eventually a website where you can input the skills for a given hero and it will tell you the rank relative to the maximum for that class based on our simulation data. Could also suggest which skills should be replaced and what your best replacement options are
+
+### More immediate todo:
+1. Add innate skill calc to the calculate_stat_improvements_from_gear_and_skills method in hero_builder.rs
+2. Add def/defmod, hp, and all other remaining skill bonuses like with atk/atkmod in same method
+3. Investigate why atk_mod is only 3.0 when printed into logfile - is 2.0 when saved in that method
+4. Test/compare sheet to herobuilder output (need to finish updating hero input format to the more simpler version excluding base stats)

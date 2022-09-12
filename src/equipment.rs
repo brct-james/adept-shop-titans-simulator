@@ -24,6 +24,12 @@ pub enum ElementType {
     #[strum(serialize = "Dark")]
     Dark,
 
+    #[strum(serialize = "Luxurious")]
+    Luxurious,
+
+    #[strum(serialize = "Opulent")]
+    Opulent,
+
     #[strum(serialize = "Any")]
     Any,
 }
@@ -102,6 +108,29 @@ pub struct Blueprint {
 impl Blueprint {
     pub fn get_type(&self) -> String {
         return self.type_.to_string();
+    }
+
+    pub fn get_atk(&self) -> f64 {
+        return self.atk.clone();
+    }
+    pub fn get_def(&self) -> f64 {
+        return self.def.clone();
+    }
+    pub fn get_hp(&self) -> f64 {
+        return self.hp.clone();
+    }
+    pub fn get_eva(&self) -> f64 {
+        return self.eva.clone();
+    }
+    pub fn get_crit(&self) -> f64 {
+        return self.crit.clone();
+    }
+
+    pub fn get_elemental_affinity(&self) -> String {
+        return self.elemental_affinity.clone();
+    }
+    pub fn get_spirit_affinity(&self) -> String {
+        return self.spirit_affinity.clone();
     }
 }
 

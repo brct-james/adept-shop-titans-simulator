@@ -558,8 +558,14 @@ pub fn load_heroes_as_sim_heroes_from_csv(
         hero.validate_equipment(&bp_map, &hero_classes);
         hero.scale_by_class(&hero_classes);
         hero.calculate_innate_tier(&class_innate_skill_names_map, &innate_skill_map);
-        hero.calculate_attack_modifier(&hero_skill_map, &class_innate_skill_names_map, &innate_skill_map);
-        hero.calculate_defense_modifier(&hero_skill_map, &class_innate_skill_names_map, &innate_skill_map);
+        // hero.calculate_attack_modifier(&hero_skill_map, &class_innate_skill_names_map, &innate_skill_map);
+        // hero.calculate_defense_modifier(&hero_skill_map, &class_innate_skill_names_map, &innate_skill_map);
+        hero.calculate_stat_improvements_from_gear_and_skills(
+            &bp_map,
+            &hero_skill_map,
+            &class_innate_skill_names_map,
+            &innate_skill_map,
+        );
         heroes.insert(identifier, SimHero::from(hero));
     }
     return heroes;

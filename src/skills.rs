@@ -39,27 +39,59 @@ impl HeroSkill {
         return self.attack_percent.clone();
     }
 
-    pub fn _get_attack_value(&self) -> f64 {
+    pub fn get_attack_value(&self) -> f64 {
         return self.attack_value.clone();
+    }
+
+    pub fn get_hp_percent(&self) -> f64 {
+        return self.hp_percent.clone();
+    }
+
+    pub fn get_hp_value(&self) -> f64 {
+        return self.hp_value.clone();
     }
 
     pub fn get_defense_percent(&self) -> f64 {
         return self.defense_percent.clone();
     }
 
-    pub fn _get_bonus_stats_from_all_equipment_percent(&self) -> f64 {
+    pub fn get_evasion_percent(&self) -> f64 {
+        return self.evasion_percent.clone();
+    }
+
+    pub fn get_crit_chance_percent(&self) -> f64 {
+        return self.crit_chance_percent.clone();
+    }
+
+    pub fn get_crit_damage_percent(&self) -> f64 {
+        return self.crit_damage_percent.clone();
+    }
+
+    pub fn get_rest_time_percent(&self) -> f64 {
+        return self.rest_time_percent.clone();
+    }
+
+    pub fn get_xp_percent(&self) -> f64 {
+        return self.xp_percent.clone();
+    }
+
+    pub fn get_survive_fatal_blow_chance_percent(&self) -> f64 {
+        return self.survive_fatal_blow_chance_percent.clone();
+    }
+
+    pub fn get_bonus_stats_from_all_equipment_percent(&self) -> f64 {
         return self.bonus_stats_from_all_equipment_percent.clone();
     }
 
-    pub fn _get_attack_with_item_percent(&self) -> f64 {
+    pub fn get_attack_with_item_percent(&self) -> f64 {
         return self.attack_with_item_percent.clone();
     }
 
-    pub fn _get_defense_with_item_percent(&self) -> f64 {
+    pub fn get_defense_with_item_percent(&self) -> f64 {
         return self.defense_with_item_percent.clone();
     }
 
-    pub fn _get_item_types(&self) -> Vec<String> {
+    pub fn get_item_types(&self) -> Vec<String> {
         return self.item_types.clone();
     }
 }
@@ -166,11 +198,11 @@ impl InnateSkill {
         return self.element_qty_req.clone();
     }
 
-    pub fn get_attack_percent(&self) -> f64 {
+    pub fn _get_attack_percent(&self) -> f64 {
         return self.attack_percent.clone();
     }
 
-    pub fn get_defense_percent(&self) -> f64 {
+    pub fn _get_defense_percent(&self) -> f64 {
         return self.defense_percent.clone();
     }
 
