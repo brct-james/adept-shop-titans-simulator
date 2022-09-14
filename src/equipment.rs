@@ -110,6 +110,10 @@ impl Blueprint {
         return self.type_.to_string();
     }
 
+    pub fn get_unlock_prerequisite(&self) -> String {
+        return self.unlock_prerequisite.to_string();
+    }
+
     pub fn get_atk(&self) -> f64 {
         return self.atk.clone();
     }

@@ -363,18 +363,11 @@ impl Hero {
             blueprints.push(bp_map[equip_name].clone());
         }
 
-        let mut bonus_atk_percent = 0.0f64;
-        let mut bonus_atk_value = 0.0f64;
-        let mut bonus_hp_percent = 0.0f64;
-        let mut bonus_hp_value = 0.0f64;
-        let mut bonus_def_percent = 0.0f64;
-        let mut bonus_def_value = 0.0f64;
-        let mut bonus_eva_percent = 0.0f64;
-        let mut bonus_crit_chance_percent = 0.0f64;
-        let mut bonus_crit_damage_percent = 0.0f64;
-        let mut bonus_rest_time_percent = 0.0f64;
-        let mut bonus_xp_percent = 0.0f64;
-        let mut bonus_survive_fatal_blow_chance_percent = 0.0f64;
+        let mut equip_atk_value = 0.0f64;
+        let mut equip_hp_value = 0.0f64;
+        let mut equip_def_value = 0.0f64;
+        let mut equip_eva_percent = 0.0f64;
+        let mut equip_crit_chance_percent = 0.0f64;
 
         let mut spirit_bonus_atk_value: f64 = 0.0;
         let mut spirit_bonus_atk_percent: f64 = 0.0;
@@ -385,6 +378,9 @@ impl Hero {
         let mut spirit_bonus_eva_percent: f64 = 0.0;
         let mut spirit_bonus_crit_dmg_percent: f64 = 0.0;
         let mut spirit_bonus_crit_chance_percent: f64 = 0.0;
+        let mut spirit_bonus_rest_time_percent: f64 = 0.0;
+        let mut spirit_bonus_xp_percent: f64 = 0.0;
+        let mut spirit_bonus_survive_fatal_blow_chance_percent = 0.0f64;
 
         // Calculate gear bonuses
         for (gear_index, blueprint) in blueprints.iter().enumerate() {
@@ -679,6 +675,16 @@ impl Hero {
                 gear_spirit_hp_bonus *= 1.5;
             }
 
+            let spellknight_bonus: f64;
+            // Items from chests have innate elements, and official data sheet doesn't have innate element as a field, so this is the best we've got
+            if self.class.as_str() == "Spellknight"
+                && blueprint.get_unlock_prerequisite().contains("Chest")
+            {
+                spellknight_bonus = 1.5;
+            } else {
+                spellknight_bonus = 1.0;
+            }
+
             // Calculate and apply gear bonus to running totals
             let item_attack_final = ((blueprint.get_atk() * gear_quality_bonus)
                 + f64::min(gear_element_atk_bonus, blueprint.get_atk())
@@ -687,7 +693,8 @@ impl Hero {
             let item_defense_final = ((blueprint.get_def() * gear_quality_bonus)
                 + f64::min(gear_element_def_bonus, blueprint.get_def())
                 + f64::min(gear_spirit_def_bonus, blueprint.get_def()))
-                * (1.0 + bonus_item_def_percent + bonus_item_all_stats_percent);
+                * (1.0 + bonus_item_def_percent + bonus_item_all_stats_percent)
+                * spellknight_bonus;
             let item_hp_final = ((blueprint.get_hp() * gear_quality_bonus)
                 + f64::min(gear_element_hp_bonus, blueprint.get_hp())
                 + f64::min(gear_spirit_hp_bonus, blueprint.get_hp()))
@@ -695,11 +702,11 @@ impl Hero {
             // bonus_atk_value += blueprint.get_atk() * gear_quality_bonus * (1.0 + bonus_item_atk_percent + bonus_item_all_stats_percent);
             // bonus_def_value += blueprint.get_def() * gear_quality_bonus * (1.0 + bonus_item_def_percent + bonus_item_all_stats_percent);
             // bonus_hp_value += blueprint.get_hp() * gear_quality_bonus * (1.0 + bonus_item_all_stats_percent);
-            bonus_atk_value += item_attack_final;
-            bonus_def_value += item_defense_final;
-            bonus_hp_value += item_hp_final;
-            bonus_eva_percent += blueprint.get_eva() * (1.0 + bonus_item_all_stats_percent);
-            bonus_crit_chance_percent +=
+            equip_atk_value += item_attack_final;
+            equip_def_value += item_defense_final;
+            equip_hp_value += item_hp_final;
+            equip_eva_percent += blueprint.get_eva() * (1.0 + bonus_item_all_stats_percent);
+            equip_crit_chance_percent +=
                 blueprint.get_crit() * (1.0 + bonus_item_all_stats_percent);
         }
 
@@ -758,24 +765,37 @@ impl Hero {
 
         // ATK calc
         let base_atk = self.atk;
-        let seeded_atk = base_atk + f64::from(self.hp_seeds * 4);
+        let seeded_atk = base_atk + f64::from(self.atk_seeds * 4);
         let summarized_base_atk_value = seeded_atk + spirit_bonus_atk_value + skill_bonus_atk_value;
         let summarized_atk_percent_modifier = 1.0
             + skill_bonus_atk_percent
             + geo_astramancer_element_qty_or_chieftain_threat_bonus
             + spirit_bonus_atk_percent;
         let modified_atk_value = summarized_base_atk_value * summarized_atk_percent_modifier;
-        let modified_atk_bonus = bonus_atk_value * summarized_atk_percent_modifier;
-        let new_atk = modified_atk_value + modified_atk_bonus;
-        self.atk = new_atk;
+        let modified_atk_bonus = equip_atk_value * summarized_atk_percent_modifier;
+        let final_atk = modified_atk_value + modified_atk_bonus;
+        self.atk = final_atk;
         // ((seeded_atk + gear_spirit_bonus_atk_value + sum(skill_bonus_atk_value)) * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)) + (bonus_atk_value * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)))
 
         // ATK mod calc
-        let new_atk_mod = skill_bonus_atk_percent
+        let final_atk_mod = skill_bonus_atk_percent
             + geo_astramancer_element_qty_or_chieftain_threat_bonus
             + spirit_bonus_atk_percent;
-        self.atk_modifier = new_atk_mod;
+        self.atk_modifier = final_atk_mod;
         // (skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)
+
+        // DEF
+        let base_def = self.def;
+        let seeded_def = base_def + f64::from(self.def_seeds * 4);
+        let final_def = (seeded_def + equip_def_value + spirit_bonus_def_value)
+            * (skill_bonus_def_percent + spirit_bonus_def_percent);
+        self.def = final_def;
+
+        // DEF mod
+        let final_def_mod = skill_bonus_atk_percent + spirit_bonus_def_percent;
+        self.def_modifier = final_def_mod;
+
+        // HP
     }
 
     pub fn _round_floats_for_display(&self) -> Hero {
