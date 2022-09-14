@@ -5,7 +5,7 @@ use crate::equipment::{Blueprint, ElementType};
 use crate::hero_builder::{create_hero, Hero, HeroClass};
 use crate::skills::{HeroSkill, InnateSkill};
 
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 use std::str::FromStr;
 
 use super::heroes::{create_sim_hero, SimHero};
@@ -641,7 +641,8 @@ pub fn _save_hero_classes_to_yaml(
         .open(path)
         .unwrap();
 
-    serde_yaml::to_writer(writer, &hashmap).unwrap();
+    let ordered: BTreeMap<_, _> = hashmap.iter().collect();
+    serde_yaml::to_writer(writer, &ordered).unwrap();
 
     return Ok(());
 }

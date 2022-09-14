@@ -241,8 +241,6 @@ fn main() {
 
     let team = create_team(vec![heroes["Tammy"].clone()], None).unwrap();
 
-    println!("{:#?}", heroes["Tammy"].round_floats_for_display());
-
     let dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
     let dungeon = dungeons["Bleakspire Peak"].clone();
 
