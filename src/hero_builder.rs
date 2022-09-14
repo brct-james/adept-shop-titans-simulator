@@ -82,6 +82,7 @@ pub struct Hero {
     innate_tier: u8,
 
     hp: f64,
+    hp_regen: f64,
     atk: f64,
     def: f64,
     eva: f64,
@@ -89,6 +90,8 @@ pub struct Hero {
     crit_mult: f64,
     threat_rating: u16,
     element_type: String,
+    element_qty: u16,
+    survive_fatal_blow_chance: f64,
 
     atk_modifier: f64,
     def_modifier: f64,
@@ -113,6 +116,7 @@ pub fn create_hero(
     innate_tier: u8,
 
     hp: f64,
+    hp_regen: f64,
     atk: f64,
     def: f64,
     eva: f64,
@@ -120,6 +124,8 @@ pub fn create_hero(
     crit_mult: f64,
     threat_rating: u16,
     element_type: String,
+    element_qty: u16,
+    survive_fatal_blow_chance: f64,
 
     atk_modifier: f64,
     def_modifier: f64,
@@ -143,6 +149,7 @@ pub fn create_hero(
         innate_tier,
 
         hp,
+        hp_regen,
         atk,
         def,
         eva,
@@ -150,6 +157,8 @@ pub fn create_hero(
         crit_mult,
         threat_rating,
         element_type,
+        element_qty,
+        survive_fatal_blow_chance,
 
         atk_modifier,
         def_modifier,
@@ -169,7 +178,7 @@ pub fn create_hero(
 
 impl Hero {
     pub fn validate_equipment(
-        &self,
+        &mut self,
         bp_map: &HashMap<String, Blueprint>,
         hero_classes: &HashMap<String, HeroClass>,
     ) {
@@ -180,6 +189,8 @@ impl Hero {
             );
         }
         let class = hero_classes.get(&self.class).unwrap();
+
+        let mut element_qty = 0u16;
 
         for (i, equipment) in self.equipment_equipped.iter().enumerate() {
             if !bp_map.contains_key(equipment) {
@@ -198,7 +209,33 @@ impl Hero {
                     class.equipment_allowed,
                 )
             }
+
+            let split_vec = self.elements_socketed[i].split(" ").collect::<Vec<&str>>();
+            if split_vec.len() < 2 {
+                panic!(
+                    "Element {} must conform to format [type] [grade: 1-4]",
+                    self.elements_socketed[i]
+                );
+            }
+            let element = split_vec[0];
+            let grade = split_vec[1];
+            if element == self.element_type {
+                match grade {
+                    "1" => element_qty += 5,
+                    "2" => element_qty += 10,
+                    "3" => element_qty += 15,
+                    "4" => element_qty += 25,
+                    _ => panic!("Unknown element grade {}", grade),
+                }
+                if element == blueprint.get_elemental_affinity() {
+                    element_qty += 5;
+                }
+            } else {
+                panic!("Unknown element type {}", element);
+            }
         }
+
+        self.element_qty = element_qty;
     }
 
     pub fn calculate_innate_skill_name(
@@ -222,48 +259,66 @@ impl Hero {
         class_innate_skill_names_map: &HashMap<String, String>,
         innate_skill_map: &HashMap<String, InnateSkill>,
     ) {
-        let element_qty = self.calculate_element_qty();
         let innate_skill = self.calculate_innate_skill_name(class_innate_skill_names_map);
 
         let mut innate_skill_variants: Vec<&InnateSkill> = innate_skill_map
             .values()
             .filter(|is| {
-                is.get_tier_1_name() == innate_skill && is.get_element_qty_req() < element_qty
+                is.get_tier_1_name() == innate_skill && is.get_element_qty_req() < self.element_qty
             })
             .collect::<Vec<&InnateSkill>>();
 
         innate_skill_variants.sort_unstable_by_key(|is| is.get_skill_tier());
-
-        println!("Innate_Skill_Variants: {:#?}", innate_skill_variants);
 
         let innate_skill_info = innate_skill_variants[innate_skill_variants.len() - 1];
 
         self.innate_tier = innate_skill_info.get_skill_tier();
     }
 
-    pub fn calculate_element_qty(&self) -> u16 {
-        let mut element_qty = 0u16;
-        for element_string in &self.elements_socketed {
-            let split_vec: Vec<&str> = element_string.split(" ").collect();
-            if split_vec.len() < 2 {
-                panic!(
-                    "Element {} must conform to format [type] [grade: 1-4]",
-                    element_string
-                );
-            }
-            let element = split_vec[0];
-            let grade = split_vec[1];
-            if element == self.element_type {
-                match grade {
-                    "1" => element_qty += 5,
-                    "2" => element_qty += 10,
-                    "3" => element_qty += 15,
-                    "4" => element_qty += 25,
-                    _ => panic!("Unknown element grade {}", grade),
+    /// Calculate skill tier and get the correct skill
+    pub fn calculate_hero_skill_tier(
+        &self,
+        hero_skill_tier_1_name_map: &HashMap<String, String>,
+        hero_skill_map: &HashMap<String, HeroSkill>,
+        base_skill_name: String,
+    ) -> (u8, HeroSkill) {
+        if !hero_skill_map.contains_key(&base_skill_name) {
+            panic!("Unknown skill name: {}", base_skill_name);
+        }
+
+        let mut skill = &hero_skill_map[&base_skill_name];
+        let mut tier = skill.get_skill_tier();
+        let mut checked_upgrade = false;
+
+        loop {
+            let tier_formatted_skill_name = f!("{} T{}", skill.get_tier_1_name(), tier);
+            let tier_adjusted_skill_name =
+                hero_skill_tier_1_name_map[&tier_formatted_skill_name].to_string();
+            skill = &hero_skill_map[&tier_adjusted_skill_name];
+            let skill_tier_ele_req = skill.get_element_qty_req();
+
+            if self.element_qty < skill_tier_ele_req {
+                // Tier too high, scale down
+                tier -= 1;
+                if checked_upgrade {
+                    // Checked upgrade and failed, so revert and exit loop
+                    break;
                 }
+            } else if self.element_qty > skill_tier_ele_req && tier < 4 {
+                // May be able to upgrade tier
+                tier += 1;
+                checked_upgrade = true;
+            } else {
+                // Element qty == requirement, just exit
+                break;
             }
         }
-        return element_qty;
+
+        let tier_formatted_skill_name = f!("{} T{}", skill.get_tier_1_name(), tier);
+        let tier_adjusted_skill_name =
+            hero_skill_tier_1_name_map[&tier_formatted_skill_name].to_string();
+
+        return (tier, hero_skill_map[&tier_adjusted_skill_name].clone());
     }
 
     pub fn calculate_spirit_qty(&self, spirit_name: String) -> u8 {
@@ -348,12 +403,15 @@ impl Hero {
         self.eva = class.base_eva;
         self.crit_chance = class.base_crit_chance;
         self.crit_mult = class.base_crit_mult;
+        self.threat_rating = class.base_threat_rating;
+
         self.element_type = class.element_type.to_string();
     }
 
     pub fn calculate_stat_improvements_from_gear_and_skills(
         &mut self,
         bp_map: &HashMap<String, Blueprint>,
+        hero_skill_tier_1_name_map: &HashMap<String, String>,
         hero_skill_map: &HashMap<String, HeroSkill>,
         class_innate_skill_names_map: &HashMap<String, String>,
         innate_skill_map: &HashMap<String, InnateSkill>,
@@ -362,6 +420,14 @@ impl Hero {
         for equip_name in &self.equipment_equipped {
             blueprints.push(bp_map[equip_name].clone());
         }
+
+        let innate_skill_name = self.calculate_innate_skill_name(class_innate_skill_names_map);
+        let innate_skill = innate_skill_map
+            .values()
+            .filter(|v| {
+                v.get_tier_1_name() == innate_skill_name && v.get_skill_tier() == self.innate_tier
+            })
+            .collect::<Vec<&InnateSkill>>()[0];
 
         let mut equip_atk_value = 0.0f64;
         let mut equip_hp_value = 0.0f64;
@@ -375,11 +441,13 @@ impl Hero {
         let mut spirit_bonus_def_percent: f64 = 0.0;
         let mut spirit_bonus_hp_value: f64 = 0.0;
         let mut spirit_bonus_hp_percent: f64 = 0.0;
+        let mut spirit_bonus_hp_regen_value: f64 = 0.0;
         let mut spirit_bonus_eva_percent: f64 = 0.0;
         let mut spirit_bonus_crit_dmg_percent: f64 = 0.0;
         let mut spirit_bonus_crit_chance_percent: f64 = 0.0;
-        let mut spirit_bonus_rest_time_percent: f64 = 0.0;
-        let mut spirit_bonus_xp_percent: f64 = 0.0;
+        let mut spirit_bonus_threat_rating_value: u16 = 0;
+        let _spirit_bonus_rest_time_percent: f64 = 0.0;
+        let _spirit_bonus_xp_percent: f64 = 0.0;
         let mut spirit_bonus_survive_fatal_blow_chance_percent = 0.0f64;
 
         // Calculate gear bonuses
@@ -387,6 +455,23 @@ impl Hero {
             let mut bonus_item_all_stats_percent = 0.0f64;
             let mut bonus_item_atk_percent = 0.0f64;
             let mut bonus_item_def_percent = 0.0f64;
+
+            // Check for bonus stats from innate skill
+            bonus_item_all_stats_percent +=
+                innate_skill.get_bonus_stats_from_all_equipment_percent();
+
+            if innate_skill.get_item_types().len() > 0 {
+                // Has bonuses associated with atleast one item type
+                for itype in innate_skill.get_item_types() {
+                    if blueprint.get_type() == itype {
+                        // Have that type equipped, apply bonus(es)
+                        bonus_item_atk_percent += innate_skill.get_attack_with_item_percent();
+                        bonus_item_def_percent += innate_skill.get_defense_with_item_percent();
+                        bonus_item_all_stats_percent +=
+                            innate_skill.get_all_stats_with_item_percent();
+                    }
+                }
+            }
 
             // Check for skills that give bonus stats to gear
             for skill_name in &self.skills {
@@ -533,137 +618,162 @@ impl Hero {
                 _ => panic!("Unknown gear_spirit_tier {}", gear_spirit_tier),
             }
             match gear_spirit_name {
+                "Armadillo" => {
+                    if spirit_affinity.as_str() == gear_spirit_name {
+                        spirit_bonus_survive_fatal_blow_chance_percent += 0.25;
+                    } else {
+                        spirit_bonus_survive_fatal_blow_chance_percent += 0.15;
+                    }
+                }
+                "Rhino" => {
+                    if spirit_affinity.as_str() == gear_spirit_name {
+                        spirit_bonus_threat_rating_value += 10;
+                    } else {
+                        spirit_bonus_threat_rating_value += 5;
+                    }
+                }
+                "Lizard" => {
+                    if spirit_affinity.as_str() == gear_spirit_name {
+                        spirit_bonus_hp_regen_value += 5.0;
+                    } else {
+                        spirit_bonus_hp_regen_value += 3.0;
+                    }
+                }
                 "Wolf" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_atk_percent = 0.1;
+                        spirit_bonus_atk_percent += 0.1;
                     } else {
-                        spirit_bonus_atk_percent = 0.05;
+                        spirit_bonus_atk_percent += 0.05;
                     }
                 }
                 "Ram" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_def_percent = 0.1;
+                        spirit_bonus_def_percent += 0.1;
                     } else {
-                        spirit_bonus_def_percent = 0.05;
+                        spirit_bonus_def_percent += 0.05;
                     }
                 }
                 "Eagle" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_crit_chance_percent = 0.03;
+                        spirit_bonus_crit_chance_percent += 0.03;
                     } else {
-                        spirit_bonus_crit_chance_percent = 0.02;
+                        spirit_bonus_crit_chance_percent += 0.02;
                     }
                 }
                 "Ox" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_hp_percent = 0.05;
+                        spirit_bonus_hp_percent += 0.05;
                     } else {
-                        spirit_bonus_hp_percent = 0.03;
+                        spirit_bonus_hp_percent += 0.03;
                     }
                 }
                 "Viper" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_crit_dmg_percent = 0.2;
+                        spirit_bonus_crit_dmg_percent += 0.2;
                     } else {
-                        spirit_bonus_crit_dmg_percent = 0.15;
+                        spirit_bonus_crit_dmg_percent += 0.15;
                     }
                 }
                 "Cat" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_eva_percent = 0.03;
+                        spirit_bonus_eva_percent += 0.03;
                     } else {
-                        spirit_bonus_eva_percent = 0.02;
+                        spirit_bonus_eva_percent += 0.02;
                     }
                 }
                 "Bear" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_atk_percent = 0.07;
-                        spirit_bonus_hp_value = 20.0;
+                        spirit_bonus_atk_percent += 0.07;
+                        spirit_bonus_hp_value += 20.0;
                     } else {
-                        spirit_bonus_atk_percent = 0.05;
-                        spirit_bonus_hp_value = 15.0;
+                        spirit_bonus_atk_percent += 0.05;
+                        spirit_bonus_hp_value += 15.0;
                     }
                 }
                 "Walrus" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_hp_percent = 0.08;
+                        spirit_bonus_hp_percent += 0.08;
                     } else {
-                        spirit_bonus_hp_percent = 0.05;
+                        spirit_bonus_hp_percent += 0.05;
                     }
                 }
                 "Mammoth" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_def_percent = 0.13;
+                        spirit_bonus_def_percent += 0.13;
+                        spirit_bonus_threat_rating_value += 15;
                     } else {
-                        spirit_bonus_def_percent = 0.1;
+                        spirit_bonus_def_percent += 0.1;
+                        spirit_bonus_threat_rating_value += 10;
                     }
                 }
                 "Lion" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_atk_percent = 0.07;
-                        spirit_bonus_eva_percent = 0.02;
+                        spirit_bonus_atk_percent += 0.07;
+                        spirit_bonus_eva_percent += 0.02;
                     } else {
-                        spirit_bonus_atk_percent = 0.05;
-                        spirit_bonus_eva_percent = 0.01;
+                        spirit_bonus_atk_percent += 0.05;
+                        spirit_bonus_eva_percent += 0.01;
                     }
                 }
                 "Tiger" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_def_percent = 0.07;
-                        spirit_bonus_eva_percent = 0.02;
+                        spirit_bonus_def_percent += 0.07;
+                        spirit_bonus_eva_percent += 0.02;
                     } else {
-                        spirit_bonus_def_percent = 0.05;
-                        spirit_bonus_eva_percent = 0.01;
+                        spirit_bonus_def_percent += 0.05;
+                        spirit_bonus_eva_percent += 0.01;
                     }
                 }
                 "Phoenix" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_hp_percent = 0.05;
+                        spirit_bonus_hp_percent += 0.05;
+                        spirit_bonus_hp_regen_value += 5.0;
                     } else {
-                        spirit_bonus_hp_percent = 0.04;
+                        spirit_bonus_hp_percent += 0.04;
+                        spirit_bonus_hp_regen_value += 3.0;
                     }
                 }
                 "Hydra" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_def_value = 125.0;
-                        spirit_bonus_hp_value = 35.0;
+                        spirit_bonus_def_value += 125.0;
+                        spirit_bonus_hp_value += 35.0;
                     } else {
-                        spirit_bonus_def_value = 100.0;
-                        spirit_bonus_hp_value = 25.0;
+                        spirit_bonus_def_value += 100.0;
+                        spirit_bonus_hp_value += 25.0;
                     }
                 }
                 "Tarrasque" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_def_percent = 0.25;
+                        spirit_bonus_def_percent += 0.25;
                     } else {
-                        spirit_bonus_def_percent = 0.2;
+                        spirit_bonus_def_percent += 0.2;
                     }
                 }
                 "Carbuncle" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_crit_chance_percent = 0.03;
-                        spirit_bonus_eva_percent = 0.03;
+                        spirit_bonus_crit_chance_percent += 0.03;
+                        spirit_bonus_eva_percent += 0.03;
                     } else {
-                        spirit_bonus_crit_chance_percent = 0.02;
-                        spirit_bonus_eva_percent = 0.02;
+                        spirit_bonus_crit_chance_percent += 0.02;
+                        spirit_bonus_eva_percent += 0.02;
                     }
                 }
                 "Chimera" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_atk_percent = 0.15;
-                        spirit_bonus_crit_dmg_percent = 0.15;
+                        spirit_bonus_atk_percent += 0.15;
+                        spirit_bonus_crit_dmg_percent += 0.15;
                     } else {
-                        spirit_bonus_atk_percent = 0.1;
-                        spirit_bonus_crit_dmg_percent = 0.1;
+                        spirit_bonus_atk_percent += 0.1;
+                        spirit_bonus_crit_dmg_percent += 0.1;
                     }
                 }
                 "Kraken" => {
                     if spirit_affinity.as_str() == gear_spirit_name {
-                        spirit_bonus_atk_value = 125.0;
-                        spirit_bonus_atk_percent = 0.15;
+                        spirit_bonus_atk_value += 125.0;
+                        spirit_bonus_atk_percent += 0.15;
                     } else {
-                        spirit_bonus_atk_value = 100.0;
-                        spirit_bonus_atk_percent = 0.1;
+                        spirit_bonus_atk_value += 100.0;
+                        spirit_bonus_atk_percent += 0.1;
                     }
                 }
                 _ => (),
@@ -677,10 +787,9 @@ impl Hero {
 
             let spellknight_bonus: f64;
             // Items from chests have innate elements, and official data sheet doesn't have innate element as a field, so this is the best we've got
-            if self.class.as_str() == "Spellknight"
-                && blueprint.get_unlock_prerequisite().contains("Chest")
-            {
-                spellknight_bonus = 1.5;
+            if blueprint.get_unlock_prerequisite().contains("Chest") {
+                spellknight_bonus =
+                    1.0 + innate_skill.get_all_stats_for_equipment_with_innate_element_percent();
             } else {
                 spellknight_bonus = 1.0;
             }
@@ -689,7 +798,8 @@ impl Hero {
             let item_attack_final = ((blueprint.get_atk() * gear_quality_bonus)
                 + f64::min(gear_element_atk_bonus, blueprint.get_atk())
                 + f64::min(gear_spirit_atk_bonus, blueprint.get_atk()))
-                * (1.0 + bonus_item_atk_percent + bonus_item_all_stats_percent);
+                * (1.0 + bonus_item_atk_percent + bonus_item_all_stats_percent)
+                * spellknight_bonus;
             let item_defense_final = ((blueprint.get_def() * gear_quality_bonus)
                 + f64::min(gear_element_def_bonus, blueprint.get_def())
                 + f64::min(gear_spirit_def_bonus, blueprint.get_def()))
@@ -698,7 +808,8 @@ impl Hero {
             let item_hp_final = ((blueprint.get_hp() * gear_quality_bonus)
                 + f64::min(gear_element_hp_bonus, blueprint.get_hp())
                 + f64::min(gear_spirit_hp_bonus, blueprint.get_hp()))
-                * (1.0 + bonus_item_all_stats_percent);
+                * (1.0 + bonus_item_all_stats_percent)
+                * spellknight_bonus;
             // bonus_atk_value += blueprint.get_atk() * gear_quality_bonus * (1.0 + bonus_item_atk_percent + bonus_item_all_stats_percent);
             // bonus_def_value += blueprint.get_def() * gear_quality_bonus * (1.0 + bonus_item_def_percent + bonus_item_all_stats_percent);
             // bonus_hp_value += blueprint.get_hp() * gear_quality_bonus * (1.0 + bonus_item_all_stats_percent);
@@ -715,14 +826,29 @@ impl Hero {
         let mut skill_bonus_atk_value: f64 = 0.0;
         let mut skill_bonus_hp_percent: f64 = 0.0;
         let mut skill_bonus_hp_value: f64 = 0.0;
+        let mut skill_bonus_hp_regen_value: f64 = 0.0;
         let mut skill_bonus_def_percent: f64 = 0.0;
         let mut skill_bonus_eva_percent: f64 = 0.0;
         let mut skill_bonus_crit_chance_percent: f64 = 0.0;
         let mut skill_bonus_crit_damage_percent: f64 = 0.0;
-        let mut skill_bonus_rest_time_percent: f64 = 0.0;
-        let mut skill_bonus_xp_percent_percent: f64 = 0.0;
+        let mut skill_bonus_threat_rating_value: u16 = 0;
+        let mut _skill_bonus_rest_time_percent: f64 = 0.0;
+        let mut _skill_bonus_xp_percent_percent: f64 = 0.0;
         let mut skill_bonus_survive_fatal_blow_chance_percent: f64 = 0.0;
 
+        // Get bonuses from innate skill
+        skill_bonus_atk_percent += innate_skill.get_attack_percent();
+        skill_bonus_hp_percent += innate_skill.get_hp_percent();
+        skill_bonus_hp_value += innate_skill.get_hp_value();
+        skill_bonus_hp_regen_value += innate_skill.get_hp_regen_value();
+        skill_bonus_def_percent += innate_skill.get_defense_percent();
+        skill_bonus_eva_percent += innate_skill.get_evasion_percent();
+        skill_bonus_crit_chance_percent += innate_skill.get_crit_chance_percent();
+        skill_bonus_crit_damage_percent += innate_skill.get_crit_damage_percent();
+        skill_bonus_threat_rating_value += innate_skill.get_threat_rating_value();
+        _skill_bonus_rest_time_percent += innate_skill.get_rest_time_percent();
+
+        // Get bonuses from hero skills
         for skill_name in &self.skills {
             if !hero_skill_map.contains_key(skill_name) {
                 panic!(
@@ -730,7 +856,13 @@ impl Hero {
                     skill_name
                 );
             }
-            let skill = hero_skill_map[skill_name].clone();
+
+            // Calculate skill tier and get the correct skill
+            let (_, skill) = self.calculate_hero_skill_tier(
+                hero_skill_tier_1_name_map,
+                hero_skill_map,
+                skill_name.to_string(),
+            );
 
             skill_bonus_atk_percent += skill.get_attack_percent();
             skill_bonus_atk_value += skill.get_attack_value();
@@ -740,21 +872,24 @@ impl Hero {
             skill_bonus_eva_percent += skill.get_evasion_percent();
             skill_bonus_crit_chance_percent += skill.get_crit_chance_percent();
             skill_bonus_crit_damage_percent += skill.get_crit_damage_percent();
-            skill_bonus_rest_time_percent += skill.get_rest_time_percent();
-            skill_bonus_xp_percent_percent += skill.get_xp_percent();
+            _skill_bonus_rest_time_percent += skill.get_rest_time_percent();
+            _skill_bonus_xp_percent_percent += skill.get_xp_percent();
             skill_bonus_survive_fatal_blow_chance_percent +=
                 skill.get_survive_fatal_blow_chance_percent();
         }
 
+        // Adjust threat_rating
+        let final_threat_rating =
+            self.threat_rating + skill_bonus_threat_rating_value + spirit_bonus_threat_rating_value;
+        self.threat_rating = final_threat_rating;
+
         let mut geo_astramancer_element_qty_or_chieftain_threat_bonus: f64 = 0.0;
         match self.class.as_str() {
             "Geomancer" => {
-                geo_astramancer_element_qty_or_chieftain_threat_bonus =
-                    f64::from(self.calculate_element_qty())
+                geo_astramancer_element_qty_or_chieftain_threat_bonus = f64::from(self.element_qty)
             }
             "Astramancer" => {
-                geo_astramancer_element_qty_or_chieftain_threat_bonus =
-                    f64::from(self.calculate_element_qty())
+                geo_astramancer_element_qty_or_chieftain_threat_bonus = f64::from(self.element_qty)
             }
             "Chieftain" => {
                 geo_astramancer_element_qty_or_chieftain_threat_bonus =
@@ -782,13 +917,12 @@ impl Hero {
             + geo_astramancer_element_qty_or_chieftain_threat_bonus
             + spirit_bonus_atk_percent;
         self.atk_modifier = final_atk_mod;
-        // (skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)
 
         // DEF
         let base_def = self.def;
         let seeded_def = base_def + f64::from(self.def_seeds * 4);
         let final_def = (seeded_def + equip_def_value + spirit_bonus_def_value)
-            * (skill_bonus_def_percent + spirit_bonus_def_percent);
+            * (1.0 + skill_bonus_def_percent + spirit_bonus_def_percent);
         self.def = final_def;
 
         // DEF mod
@@ -796,6 +930,47 @@ impl Hero {
         self.def_modifier = final_def_mod;
 
         // HP
+        let base_hp = self.hp;
+        let seeded_hp = base_hp + f64::from(self.hp_seeds);
+        let final_hp = (seeded_hp + equip_hp_value + skill_bonus_hp_value + spirit_bonus_hp_value)
+            * (1.0 + skill_bonus_hp_percent + spirit_bonus_hp_percent);
+        self.hp = final_hp;
+
+        // HP Regen
+        let final_hp_regen = skill_bonus_hp_regen_value + spirit_bonus_hp_regen_value;
+        self.hp_regen = final_hp_regen;
+
+        // Other Stats
+        // EVA
+        let final_eva =
+            self.eva + equip_eva_percent + skill_bonus_eva_percent + spirit_bonus_eva_percent;
+        self.eva = final_eva;
+
+        // Crit Chance
+        let final_crit_chance = self.crit_chance
+            + equip_crit_chance_percent
+            + skill_bonus_crit_chance_percent
+            + spirit_bonus_crit_chance_percent;
+        self.crit_chance = final_crit_chance;
+
+        // Crit Damage
+        let final_crit_damage =
+            self.crit_mult + skill_bonus_crit_damage_percent + spirit_bonus_crit_dmg_percent;
+        self.crit_mult = final_crit_damage;
+
+        // Rest Time
+        // let final_rest_time = self.rest_time + skill_bonus_rest_time_percent + spirit_bonus_rest_time_percent;
+        // self.rest_time = final_rest_time;
+
+        // XP Percent
+        // let final_xp = self.xp + skill_bonus_xp_percent + spirit_bonus_xp_percent;
+        // self.xp = final_xp;
+
+        // Survive Fatal Blow Chance
+        let final_survive_fatal_blow_chance = self.survive_fatal_blow_chance
+            + skill_bonus_survive_fatal_blow_chance_percent
+            + spirit_bonus_survive_fatal_blow_chance_percent;
+        self.survive_fatal_blow_chance = final_survive_fatal_blow_chance;
     }
 
     pub fn _round_floats_for_display(&self) -> Hero {
@@ -821,13 +996,15 @@ impl From<Hero> for SimHero {
             item.rank,
             item.innate_tier,
             item.hp,
+            item.hp_regen,
             item.atk,
             item.def,
             item.threat_rating,
             item.crit_chance,
             item.crit_mult,
             item.eva,
-            i2.calculate_element_qty(),
+            item.survive_fatal_blow_chance,
+            item.element_qty,
             item.element_type,
             i2.calculate_spirit_qty(String::from("Armadillo T7")),
             i2.calculate_spirit_qty(String::from("Lizard T7")),

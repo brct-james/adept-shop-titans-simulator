@@ -1,1 +1,2 @@
-identifier,class,level,rank,innate_tier,hp,attack,defense,threat,critical_chance,critical_multiplier,evasion,element_qty,element_type,armadillo_qty,lizard_qty,shark_qty,dinosaur_qty,mundra_qty,attack_modifier,defense_modifier
+identifier,class,level,rank,innate_tier,hp,hp_regen,attack,defense,threat,critical_chance,critical_multiplier,evasion,survive_fatal_blow_chance,element_qty,element_type,armadillo_qty,lizard_qty,shark_qty,dinosaur_qty,mundra_qty,attack_modifier,defense_modifier
+Tammy,Arch Druid,35,6,3,521.4,0.0,10039.08,1662.06,10,0.07,3.0,0.0,0.0,90,Earth,0,0,1,0,0,2.05,1.95

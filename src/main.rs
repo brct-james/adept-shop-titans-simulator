@@ -64,6 +64,7 @@ struct Study {
 fn load_sim_heroes(
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
+    hero_skill_tier_1_name_map: HashMap<String, String>,
     hero_skill_map: HashMap<String, HeroSkill>,
     class_innate_skill_names_map: HashMap<String, String>,
     innate_skill_map: HashMap<String, InnateSkill>,
@@ -72,11 +73,16 @@ fn load_sim_heroes(
         String::from("input/hero_builder.csv"),
         bp_map,
         hero_classes,
+        hero_skill_tier_1_name_map,
         hero_skill_map,
         class_innate_skill_names_map,
         innate_skill_map,
     );
-    // _save_sim_heroes_to_csv(String::from("input/heroes.csv"), loaded_heroes_from_builder).unwrap();
+    // let heroes_loaded_from_builder = heroes_from_builder
+    //     .values()
+    //     .map(|v| v.clone())
+    //     .collect::<Vec<SimHero>>();
+    // _save_sim_heroes_to_csv(String::from("input/heroes.csv"), heroes_loaded_from_builder).unwrap();
 
     let mut loaded_heroes = load_sim_heroes_from_csv(String::from("input/heroes.csv"))
         .iter()
@@ -212,7 +218,7 @@ fn main() {
     // )
     // .unwrap();
 
-    let (_hero_skill_tier_1_name_map, hero_skill_map) = _get_hero_skills_data(String::from(
+    let (hero_skill_tier_1_name_map, hero_skill_map) = _get_hero_skills_data(String::from(
         "data_sheets/greensim_hero_skills_v_10.2.1_slash_1.0.1.773.tsv",
     ));
 
@@ -227,12 +233,15 @@ fn main() {
     let heroes = load_sim_heroes(
         bp_map,
         hero_classes,
+        hero_skill_tier_1_name_map,
         hero_skill_map,
         class_innate_skill_names_map,
         innate_skill_map,
     );
 
     let team = create_team(vec![heroes["Tammy"].clone()], None).unwrap();
+
+    println!("{:#?}", heroes["Tammy"].round_floats_for_display());
 
     let dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
     let dungeon = dungeons["Bleakspire Peak"].clone();

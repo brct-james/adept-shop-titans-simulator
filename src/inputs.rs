@@ -21,12 +21,14 @@ pub struct SimHeroInput {
     rank: u8,
     innate_tier: u8,
     hp: f64,
+    hp_regen: f64,
     attack: f64,
     defense: f64,
     threat: u16,
     critical_chance: f64,
     critical_multiplier: f64,
     evasion: f64,
+    survive_fatal_blow_chance: f64,
     element_qty: u16,
     element_type: String,
     armadillo_qty: u8,
@@ -42,11 +44,13 @@ impl SimHeroInput {
     pub fn _round_floats_for_display(&self) -> SimHeroInput {
         let mut hi2 = self.clone();
         hi2.hp = round_to_2(hi2.hp);
+        hi2.hp_regen = round_to_2(hi2.hp_regen);
         hi2.attack = round_to_2(hi2.attack);
         hi2.defense = round_to_2(hi2.defense);
         hi2.critical_chance = round_to_2(hi2.critical_chance);
         hi2.critical_multiplier = round_to_2(hi2.critical_multiplier);
         hi2.evasion = round_to_2(hi2.evasion);
+        hi2.survive_fatal_blow_chance = round_to_2(hi2.survive_fatal_blow_chance);
         hi2.attack_modifier = round_to_2(hi2.attack_modifier);
         hi2.defense_modifier = round_to_2(hi2.defense_modifier);
         return hi2;
@@ -63,12 +67,14 @@ impl From<SimHeroInput> for SimHero {
             item.rank,
             item.innate_tier,
             item.hp,
+            item.hp_regen,
             item.attack,
             item.defense,
             item.threat,
             item.critical_chance,
             item.critical_multiplier,
             item.evasion,
+            item.survive_fatal_blow_chance,
             item.element_qty,
             item.element_type,
             item.armadillo_qty,
@@ -90,12 +96,14 @@ pub fn create_sim_hero_input(
     rank: u8,
     innate_tier: u8,
     hp: f64,
+    hp_regen: f64,
     attack: f64,
     defense: f64,
     threat: u16,
     critical_chance: f64,
     critical_multiplier: f64,
     evasion: f64,
+    survive_fatal_blow_chance: f64,
     element_qty: u16,
     element_type: String,
     armadillo_qty: u8,
@@ -113,12 +121,14 @@ pub fn create_sim_hero_input(
         rank,
         innate_tier,
         hp,
+        hp_regen,
         attack,
         defense,
         threat,
         critical_chance,
         critical_multiplier,
         evasion,
+        survive_fatal_blow_chance,
         element_qty,
         element_type,
         armadillo_qty,
@@ -422,6 +432,7 @@ impl From<HeroInput> for Hero {
             item.rank,
             0,
             item.hp,
+            0.0,
             item.atk,
             item.def,
             item.eva,
@@ -429,6 +440,8 @@ impl From<HeroInput> for Hero {
             item.crit_mult,
             item.threat_rating,
             item.element_type,
+            0,
+            0.0,
             0.0,
             0.0,
             item.hp_seeds,
@@ -545,6 +558,7 @@ pub fn load_heroes_as_sim_heroes_from_csv(
     path: String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
+    hero_skill_tier_1_name_map: HashMap<String, String>,
     hero_skill_map: HashMap<String, HeroSkill>,
     class_innate_skill_names_map: HashMap<String, String>,
     innate_skill_map: HashMap<String, InnateSkill>,
@@ -562,6 +576,7 @@ pub fn load_heroes_as_sim_heroes_from_csv(
         // hero.calculate_defense_modifier(&hero_skill_map, &class_innate_skill_names_map, &innate_skill_map);
         hero.calculate_stat_improvements_from_gear_and_skills(
             &bp_map,
+            &hero_skill_tier_1_name_map,
             &hero_skill_map,
             &class_innate_skill_names_map,
             &innate_skill_map,

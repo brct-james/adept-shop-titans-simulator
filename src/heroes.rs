@@ -964,42 +964,16 @@ impl Team {
                     hero.identifier,
                     hero.hp
                 ));
-                let before_hp = hero.hp;
-                let mut running_hp = hero.hp;
+                let mut before_hp = hero.hp;
 
-                hero.hp = f64::min(hero.hp + f64::from(hero.lizard_qty * 3), hero.hp_max);
-                if hero.hp != running_hp {
-                    log_queue.push(f!(
-                        "Hero {} is healed by Lizard spirits for {:.2}",
-                        hero.identifier,
-                        hero.hp - running_hp
-                    ));
-                    running_hp = hero.hp;
-                }
-                if hero.class == "Cleric" {
-                    hero.hp = f64::min(
-                        hero.hp + f64::from(std::cmp::min(hero.innate_tier, 3) * 5 - 5),
-                        hero.hp_max,
-                    );
-                    log_queue.push(f!(
-                        "Hero {} is healed by being a Cleric for {:.2}",
-                        hero.identifier,
-                        hero.hp - running_hp
-                    ));
-                    running_hp = hero.hp;
-                } else if hero.class == "Bishop" {
-                    if hero.innate_tier == 2 {
-                        hero.hp = f64::min(hero.hp + 5.0, hero.hp_max);
-                    } else if hero.innate_tier >= 3 {
-                        hero.hp = f64::min(hero.hp + 20.0, hero.hp_max);
-                    }
-                    log_queue.push(f!(
-                        "Hero {} is healed by being a Bishop for {:.2}",
-                        hero.identifier,
-                        hero.hp - running_hp
-                    ));
-                    running_hp = hero.hp;
-                }
+                hero.hp = f64::min(hero.hp_regen, hero.hp_max);
+                log_queue.push(f!(
+                    "Hero {} regenerates for {:.2}",
+                    hero.identifier,
+                    hero.hp - before_hp
+                ));
+
+                before_hp = hero.hp;
 
                 if champion == "Lilu" {
                     match champion_innate_tier {
@@ -1012,15 +986,14 @@ impl Team {
                     log_queue.push(f!(
                         "Hero {} is healed by Lilu for {:.2}",
                         hero.identifier,
-                        hero.hp - running_hp
+                        hero.hp - before_hp
                     ));
                     // running_hp = hero.hp;
                 }
                 log_queue.push(f!(
-                    "Hero {} has new hp of {:.2}, healed for {:.2} total",
+                    "Hero {} has new hp of {:.2} total",
                     hero.identifier,
-                    hero.hp,
-                    hero.hp - before_hp
+                    hero.hp
                 ));
             }
         }
@@ -1183,12 +1156,14 @@ pub struct SimHero {
     innate_tier: u8,
     hp: f64,
     hp_max: f64,
+    hp_regen: f64,
     attack: f64,
     defense: f64,
     threat: u16,
     critical_chance: f64,
     critical_multiplier: f64,
     evasion: f64,
+    survive_fatal_blow_chance: f64,
     element_qty: u16,
     element_type: ElementType,
     armadillo_qty: u8,
@@ -1242,6 +1217,7 @@ impl SimHero {
         let mut h2 = self.clone();
         h2.hp = round_to_2(h2.hp);
         h2.hp_max = round_to_2(h2.hp_max);
+        h2.hp_regen = round_to_2(h2.hp_regen);
         h2.attack = round_to_2(h2.attack);
         h2.defense = round_to_2(h2.defense);
         h2.critical_chance = round_to_2(h2.critical_chance);
@@ -1275,12 +1251,14 @@ impl From<SimHero> for SimHeroInput {
             item.rank,
             item.innate_tier,
             item.hp,
+            item.hp_regen,
             item.attack * item.attack_modifier,
             item.defense,
             item.threat,
             item.critical_chance,
             item.critical_multiplier,
             item.evasion,
+            item.survive_fatal_blow_chance,
             item.element_qty,
             item.element_type.to_string(),
             item.armadillo_qty,
@@ -1302,12 +1280,14 @@ pub fn create_sim_hero(
     rank: u8,
     innate_tier: u8,
     hp: f64,
+    hp_regen: f64,
     attack: f64,
     defense: f64,
     threat: u16,
     critical_chance: f64,
     critical_multiplier: f64,
     evasion: f64,
+    survive_fatal_blow_chance: f64,
     element_qty: u16,
     element_type_string: String,
     armadillo_qty: u8,
@@ -1412,12 +1392,14 @@ pub fn create_sim_hero(
         innate_tier,
         hp,
         hp_max: hp,
+        hp_regen: hp_regen,
         attack: attack / atk_mod,
         defense: defense,
         threat,
         critical_chance,
         critical_multiplier,
         evasion,
+        survive_fatal_blow_chance,
         element_qty,
         element_type,
         armadillo_qty,

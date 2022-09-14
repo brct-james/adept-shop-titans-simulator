@@ -35,6 +35,18 @@ impl HeroSkill {
         return self.type_.to_string();
     }
 
+    pub fn get_skill_tier(&self) -> u8 {
+        return self.skill_tier.clone();
+    }
+
+    pub fn get_element_qty_req(&self) -> u16 {
+        return self.element_qty_req.clone();
+    }
+
+    pub fn get_tier_1_name(&self) -> String {
+        return self.tier_1_name.clone();
+    }
+
     pub fn get_attack_percent(&self) -> f64 {
         return self.attack_percent.clone();
     }
@@ -170,7 +182,7 @@ pub struct InnateSkill {
     evasion_percent: f64,
     crit_chance_percent: f64,
     crit_damage_percent: f64,
-    threat_rating_value: f64,
+    threat_rating_value: u16,
     rest_time_percent: f64,
     bonus_stats_from_all_equipment_percent: f64,
     all_stats_for_equipment_with_innate_element_percent: f64,
@@ -190,31 +202,77 @@ impl InnateSkill {
         return self.skill_tier.clone();
     }
 
-    pub fn get_tier_1_name(&self) -> String {
-        return self.tier_1_name.to_string();
-    }
-
     pub fn get_element_qty_req(&self) -> u16 {
         return self.element_qty_req.clone();
     }
 
-    pub fn _get_attack_percent(&self) -> f64 {
+    pub fn get_tier_1_name(&self) -> String {
+        return self.tier_1_name.to_string();
+    }
+
+    pub fn get_attack_percent(&self) -> f64 {
         return self.attack_percent.clone();
     }
 
-    pub fn _get_defense_percent(&self) -> f64 {
+    pub fn get_hp_percent(&self) -> f64 {
+        return self.hp_percent.clone();
+    }
+
+    pub fn get_hp_value(&self) -> f64 {
+        return self.hp_value.clone();
+    }
+
+    pub fn get_hp_regen_value(&self) -> f64 {
+        return self.hp_regen_value.clone();
+    }
+
+    pub fn get_defense_percent(&self) -> f64 {
         return self.defense_percent.clone();
     }
 
-    pub fn _get_attack_with_item_percent(&self) -> f64 {
+    pub fn get_evasion_percent(&self) -> f64 {
+        return self.evasion_percent.clone();
+    }
+
+    pub fn get_crit_chance_percent(&self) -> f64 {
+        return self.crit_chance_percent.clone();
+    }
+
+    pub fn get_crit_damage_percent(&self) -> f64 {
+        return self.crit_damage_percent.clone();
+    }
+
+    pub fn get_threat_rating_value(&self) -> u16 {
+        return self.threat_rating_value.clone();
+    }
+
+    pub fn get_rest_time_percent(&self) -> f64 {
+        return self.rest_time_percent.clone();
+    }
+
+    pub fn get_bonus_stats_from_all_equipment_percent(&self) -> f64 {
+        return self.bonus_stats_from_all_equipment_percent.clone();
+    }
+
+    pub fn get_all_stats_for_equipment_with_innate_element_percent(&self) -> f64 {
+        return self
+            .all_stats_for_equipment_with_innate_element_percent
+            .clone();
+    }
+
+    pub fn get_all_stats_with_item_percent(&self) -> f64 {
+        return self.all_stats_with_item_percent.clone();
+    }
+
+    pub fn get_attack_with_item_percent(&self) -> f64 {
         return self.attack_with_item_percent.clone();
     }
 
-    pub fn _get_defense_with_item_percent(&self) -> f64 {
+    pub fn get_defense_with_item_percent(&self) -> f64 {
         return self.defense_with_item_percent.clone();
     }
 
-    pub fn _get_item_types(&self) -> Vec<String> {
+    pub fn get_item_types(&self) -> Vec<String> {
         return self.item_types.clone();
     }
 }
@@ -234,7 +292,7 @@ pub fn create_innate_skill(
     evasion_percent: f64,
     crit_chance_percent: f64,
     crit_damage_percent: f64,
-    threat_rating_value: f64,
+    threat_rating_value: u16,
     rest_time_percent: f64,
     bonus_stats_from_all_equipment_percent: f64,
     all_stats_for_equipment_with_innate_element_percent: f64,

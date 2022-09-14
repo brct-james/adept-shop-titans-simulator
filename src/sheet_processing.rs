@@ -68,7 +68,7 @@ pub fn _get_innate_skills_data(
                 record[13].to_string().parse::<f64>().unwrap_or_default(),
                 record[14].to_string().parse::<f64>().unwrap_or_default(),
                 record[15].to_string().parse::<f64>().unwrap_or_default(),
-                record[16].to_string().parse::<f64>().unwrap_or_default(),
+                record[16].to_string().parse::<u16>().unwrap_or_default(),
                 record[17].to_string().parse::<f64>().unwrap_or_default(),
                 record[18].to_string().parse::<f64>().unwrap_or_default(),
                 record[19].to_string().parse::<f64>().unwrap_or_default(),
@@ -119,8 +119,8 @@ pub fn _get_hero_skills_data(
         }
 
         skill_tier_1_name_map.insert(
-            record[1].to_string(),
             f!("{} T{}", record[6].to_string(), record[3].to_string()),
+            record[1].to_string(),
         );
 
         hs_map.insert(
