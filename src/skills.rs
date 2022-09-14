@@ -194,6 +194,10 @@ pub struct InnateSkill {
 }
 
 impl InnateSkill {
+    pub fn _get_name(&self) -> String {
+        return self.name.to_string();
+    }
+
     pub fn _get_type(&self) -> String {
         return self.type_.to_string();
     }

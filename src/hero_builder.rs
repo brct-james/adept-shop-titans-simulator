@@ -475,13 +475,22 @@ impl Hero {
 
             // Check for skills that give bonus stats to gear
             for skill_name in &self.skills {
+                if skill_name == "" {
+                    continue;
+                }
                 if !hero_skill_map.contains_key(skill_name) {
                     panic!(
                         "Skill {} could not be found in keys for hero_skill_map",
                         skill_name
                     );
                 }
-                let skill = hero_skill_map[skill_name].clone();
+
+                // Calculate skill tier and get the correct skill
+                let (_, skill) = self.calculate_hero_skill_tier(
+                    hero_skill_tier_1_name_map,
+                    hero_skill_map,
+                    skill_name.to_string(),
+                );
 
                 // Get all stats bonus if applicable
                 bonus_item_all_stats_percent += skill.get_bonus_stats_from_all_equipment_percent();
@@ -617,72 +626,83 @@ impl Hero {
                 }
                 _ => panic!("Unknown gear_spirit_tier {}", gear_spirit_tier),
             }
+
+            let spirit_affinity_split: &str;
+            if spirit_affinity.as_str() != "---" {
+                spirit_affinity_split = spirit_affinity
+                    .as_str()
+                    .split_whitespace()
+                    .collect::<Vec<&str>>()[0];
+            } else {
+                spirit_affinity_split = "NO_SPIRIT_AFFINITY";
+            }
+
             match gear_spirit_name {
                 "Armadillo" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_survive_fatal_blow_chance_percent += 0.25;
                     } else {
                         spirit_bonus_survive_fatal_blow_chance_percent += 0.15;
                     }
                 }
                 "Rhino" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_threat_rating_value += 10;
                     } else {
                         spirit_bonus_threat_rating_value += 5;
                     }
                 }
                 "Lizard" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_hp_regen_value += 5.0;
                     } else {
                         spirit_bonus_hp_regen_value += 3.0;
                     }
                 }
                 "Wolf" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_atk_percent += 0.1;
                     } else {
                         spirit_bonus_atk_percent += 0.05;
                     }
                 }
                 "Ram" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_def_percent += 0.1;
                     } else {
                         spirit_bonus_def_percent += 0.05;
                     }
                 }
                 "Eagle" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_crit_chance_percent += 0.03;
                     } else {
                         spirit_bonus_crit_chance_percent += 0.02;
                     }
                 }
                 "Ox" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_hp_percent += 0.05;
                     } else {
                         spirit_bonus_hp_percent += 0.03;
                     }
                 }
                 "Viper" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_crit_dmg_percent += 0.2;
                     } else {
                         spirit_bonus_crit_dmg_percent += 0.15;
                     }
                 }
                 "Cat" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_eva_percent += 0.03;
                     } else {
                         spirit_bonus_eva_percent += 0.02;
                     }
                 }
                 "Bear" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_atk_percent += 0.07;
                         spirit_bonus_hp_value += 20.0;
                     } else {
@@ -691,14 +711,14 @@ impl Hero {
                     }
                 }
                 "Walrus" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_hp_percent += 0.08;
                     } else {
                         spirit_bonus_hp_percent += 0.05;
                     }
                 }
                 "Mammoth" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_def_percent += 0.13;
                         spirit_bonus_threat_rating_value += 15;
                     } else {
@@ -707,7 +727,7 @@ impl Hero {
                     }
                 }
                 "Lion" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_atk_percent += 0.07;
                         spirit_bonus_eva_percent += 0.02;
                     } else {
@@ -716,7 +736,7 @@ impl Hero {
                     }
                 }
                 "Tiger" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_def_percent += 0.07;
                         spirit_bonus_eva_percent += 0.02;
                     } else {
@@ -725,7 +745,7 @@ impl Hero {
                     }
                 }
                 "Phoenix" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_hp_percent += 0.05;
                         spirit_bonus_hp_regen_value += 5.0;
                     } else {
@@ -734,7 +754,7 @@ impl Hero {
                     }
                 }
                 "Hydra" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_def_value += 125.0;
                         spirit_bonus_hp_value += 35.0;
                     } else {
@@ -743,14 +763,14 @@ impl Hero {
                     }
                 }
                 "Tarrasque" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_def_percent += 0.25;
                     } else {
                         spirit_bonus_def_percent += 0.2;
                     }
                 }
                 "Carbuncle" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_crit_chance_percent += 0.03;
                         spirit_bonus_eva_percent += 0.03;
                     } else {
@@ -759,7 +779,7 @@ impl Hero {
                     }
                 }
                 "Chimera" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_atk_percent += 0.15;
                         spirit_bonus_crit_dmg_percent += 0.15;
                     } else {
@@ -768,7 +788,7 @@ impl Hero {
                     }
                 }
                 "Kraken" => {
-                    if spirit_affinity.as_str() == gear_spirit_name {
+                    if spirit_affinity_split == gear_spirit_name {
                         spirit_bonus_atk_value += 125.0;
                         spirit_bonus_atk_percent += 0.15;
                     } else {
@@ -779,7 +799,7 @@ impl Hero {
                 _ => (),
             }
 
-            if spirit_affinity.as_str() == gear_spirit_name {
+            if spirit_affinity_split == gear_spirit_name {
                 gear_spirit_atk_bonus *= 1.5;
                 gear_spirit_def_bonus *= 1.5;
                 gear_spirit_hp_bonus *= 1.5;
@@ -850,6 +870,9 @@ impl Hero {
 
         // Get bonuses from hero skills
         for skill_name in &self.skills {
+            if skill_name == "" {
+                continue;
+            }
             if !hero_skill_map.contains_key(skill_name) {
                 panic!(
                     "Skill {} could not be found in keys for hero_skill_map",
@@ -898,6 +921,7 @@ impl Hero {
             _ => (),
         }
 
+        println!("--{}--", self.identifier);
         // ATK calc
         let base_atk = self.atk;
         let seeded_atk = base_atk + f64::from(self.atk_seeds * 4);
@@ -907,9 +931,10 @@ impl Hero {
             + geo_astramancer_element_qty_or_chieftain_threat_bonus
             + spirit_bonus_atk_percent;
         let modified_atk_value = summarized_base_atk_value * summarized_atk_percent_modifier;
-        let modified_atk_bonus = equip_atk_value * summarized_atk_percent_modifier;
-        let final_atk = modified_atk_value + modified_atk_bonus;
+        let modified_atk_gear_value = equip_atk_value * summarized_atk_percent_modifier;
+        let final_atk = modified_atk_value + modified_atk_gear_value;
         self.atk = final_atk;
+        println!("final_atk: {}", final_atk);
         // ((seeded_atk + gear_spirit_bonus_atk_value + sum(skill_bonus_atk_value)) * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)) + (bonus_atk_value * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)))
 
         // ATK mod calc
@@ -924,6 +949,8 @@ impl Hero {
         let final_def = (seeded_def + equip_def_value + spirit_bonus_def_value)
             * (1.0 + skill_bonus_def_percent + spirit_bonus_def_percent);
         self.def = final_def;
+        println!("equip_def_value: {}", equip_def_value);
+        println!("final_def: {}", final_def);
 
         // DEF mod
         let final_def_mod = skill_bonus_atk_percent + spirit_bonus_def_percent;
@@ -935,6 +962,7 @@ impl Hero {
         let final_hp = (seeded_hp + equip_hp_value + skill_bonus_hp_value + spirit_bonus_hp_value)
             * (1.0 + skill_bonus_hp_percent + spirit_bonus_hp_percent);
         self.hp = final_hp;
+        println!("final_hp: {}", final_hp);
 
         // HP Regen
         let final_hp_regen = skill_bonus_hp_regen_value + spirit_bonus_hp_regen_value;

@@ -82,7 +82,8 @@ fn load_sim_heroes(
     //     .values()
     //     .map(|v| v.clone())
     //     .collect::<Vec<SimHero>>();
-    // _save_sim_heroes_to_csv(String::from("input/heroes.csv"), heroes_loaded_from_builder).unwrap();
+    // inputs::_save_sim_heroes_to_csv(String::from("input/heroes.csv"), heroes_loaded_from_builder)
+    //     .unwrap();
 
     let mut loaded_heroes = load_sim_heroes_from_csv(String::from("input/heroes.csv"))
         .iter()
