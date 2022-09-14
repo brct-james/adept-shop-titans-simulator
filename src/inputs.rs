@@ -5,7 +5,7 @@ use crate::equipment::{Blueprint, ElementType};
 use crate::hero_builder::{create_hero, Hero, HeroClass};
 use crate::skills::{HeroSkill, InnateSkill};
 
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 
 use super::heroes::{create_sim_hero, SimHero};
