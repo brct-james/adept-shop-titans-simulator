@@ -266,12 +266,3 @@ if skill_item_types.len() > 0 {
 3. Team combinations - what are the optimal classes to group with each other
 
 4. Eventually a website where you can input the skills for a given hero and it will tell you the rank relative to the maximum for that class based on our simulation data. Could also suggest which skills should be replaced and what your best replacement options are
-
-### More immediate todo:
-1. Add innate skill calc to the calculate_stat_improvements_from_gear_and_skills method in hero_builder.rs
-2. ~~Add all other remaining skill bonuses like with atk/atkmod in same method~~
-3. Investigate why atk_mod is only 3.0 when printed into logfile - is 2.0 when saved in that method
-4. Test/compare sheet to herobuilder output (need to finish updating hero input format to the more simpler version excluding base stats)
-5. ~~Ensure Threat Rating is correctly calculated from skills and spirits, and factored correctly into that one innate that gets a bonus from TR~~
-6. ~~Hero regeneration is now properly calculated by hero builder~~
-7. ~~Fix skills not being scaled to correct tier in calculations~~

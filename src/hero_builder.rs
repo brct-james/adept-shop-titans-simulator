@@ -949,7 +949,6 @@ impl Hero {
         let final_def = (seeded_def + equip_def_value + spirit_bonus_def_value)
             * (1.0 + skill_bonus_def_percent + spirit_bonus_def_percent);
         self.def = final_def;
-        println!("equip_def_value: {}", equip_def_value);
         println!("final_def: {}", final_def);
 
         // DEF mod
@@ -999,6 +998,8 @@ impl Hero {
             + skill_bonus_survive_fatal_blow_chance_percent
             + spirit_bonus_survive_fatal_blow_chance_percent;
         self.survive_fatal_blow_chance = final_survive_fatal_blow_chance;
+
+        println!("\n");
     }
 
     pub fn _round_floats_for_display(&self) -> Hero {
@@ -1053,13 +1054,6 @@ impl From<Hero> for HeroInput {
             item.class,
             item.level,
             item.rank,
-            item.hp,
-            item.atk,
-            item.def,
-            item.eva,
-            item.crit_chance,
-            item.crit_mult,
-            item.threat_rating,
             item.element_type,
             item.hp_seeds,
             item.atk_seeds,

@@ -326,13 +326,6 @@ pub struct HeroInput {
     level: u8,
     rank: u8,
 
-    hp: f64,
-    atk: f64,
-    def: f64,
-    eva: f64,
-    crit_chance: f64,
-    crit_mult: f64,
-    threat_rating: u16,
     element_type: String,
 
     hp_seeds: u8,
@@ -375,18 +368,18 @@ pub struct HeroInput {
     spirits_socketed_6: String,
 }
 
-impl HeroInput {
-    pub fn _round_floats_for_display(&self) -> HeroInput {
-        let mut hi2 = self.clone();
-        hi2.hp = round_to_2(hi2.hp);
-        hi2.atk = round_to_2(hi2.atk);
-        hi2.def = round_to_2(hi2.def);
-        hi2.eva = round_to_2(hi2.eva);
-        hi2.crit_chance = round_to_2(hi2.crit_chance);
-        hi2.crit_mult = round_to_2(hi2.crit_mult);
-        return hi2;
-    }
-}
+// impl HeroInput {
+//     pub fn _round_floats_for_display(&self) -> HeroInput {
+//         let mut hi2 = self.clone();
+//         hi2.hp = round_to_2(hi2.hp);
+//         hi2.atk = round_to_2(hi2.atk);
+//         hi2.def = round_to_2(hi2.def);
+//         hi2.eva = round_to_2(hi2.eva);
+//         hi2.crit_chance = round_to_2(hi2.crit_chance);
+//         hi2.crit_mult = round_to_2(hi2.crit_mult);
+//         return hi2;
+//     }
+// }
 
 impl From<HeroInput> for Hero {
     /// Create a hero from the input object performing type validation and calculating certain fields
@@ -431,14 +424,14 @@ impl From<HeroInput> for Hero {
             item.level,
             item.rank,
             0,
-            item.hp,
             0.0,
-            item.atk,
-            item.def,
-            item.eva,
-            item.crit_chance,
-            item.crit_mult,
-            item.threat_rating,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
             item.element_type,
             0,
             0.0,
@@ -462,13 +455,6 @@ pub fn create_hero_input(
     level: u8,
     rank: u8,
 
-    hp: f64,
-    atk: f64,
-    def: f64,
-    eva: f64,
-    crit_chance: f64,
-    crit_mult: f64,
-    threat_rating: u16,
     element_type: String,
 
     hp_seeds: u8,
@@ -488,13 +474,6 @@ pub fn create_hero_input(
         level,
         rank,
 
-        hp,
-        atk,
-        def,
-        eva,
-        crit_chance,
-        crit_mult,
-        threat_rating,
         element_type,
 
         hp_seeds,
@@ -604,7 +583,7 @@ pub fn _save_heroes_to_csv(
         .from_writer(writer);
 
     for hero in heroes_vec {
-        wtr.serialize(HeroInput::from(hero)._round_floats_for_display())?;
+        wtr.serialize(HeroInput::from(hero))?;
     }
 
     wtr.flush()?;
