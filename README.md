@@ -13,34 +13,6 @@ A rust-based simulator for the game Shop Titans
 
 ## Notes/TODO:
 
-### Notes:
-
-- I think the spreadsheet doesn't use spirit qty but rather the actual value of the spirits (e.g. lizard gives +3hp so for qty 1 the spreadsheet would actually be 3 lizard...) Double check and then modify as appropriate
-
-- - Armadillo is 15 per 1, lizard is 3 per 1, shark is 20 per 1, dinosaur is 25 per 1, mundras ins 1 per 1
-
-- Must implement SimResult and aggregation in trials
-
-- IMplement logger for round-by-round actions for debugging (with some kind of toggle that can be passed for saving or not, or only saving if fail round)
-
-- Some way to manually specify which if any miniboss should be spawned
-
-- Optimizations
-
-- Round f64s to 2 decimals for output in csvs
-
-- make sure only one champion per team
-
-- pull statistics and dungeon info from spreadsheet rather than manually entered
-
-- team will have its own identifier and use the hero identifiers to select from the heroes csv, team is its own csv
-- trial will then have another csv that selects dungeons from their own csv by identifier
-
-- redo readme
-
-- tammara is giving HUGE crits - like 7.7m damage, I am assuming that is because I input her stats wrong, check once hero builder is done
-
-
 ### Todo:
 
 1. Create logic for automatically setting up trials
@@ -70,3 +42,13 @@ A rust-based simulator for the game Shop Titans
 14. Additionally, auto-combinations should exclude skills that dont match the equipped gear - if there is no dagger equipped then dagger master should be skipped
 
 15. Perhaps it would be good to have a way to restrict what skills/equipment is available - for example restricting to T10 gear and below or removing a set of X skills for some reason. Goes hand in hand with locking stuff I think
+
+### Notes:
+
+- - Armadillo is 15 per 1, lizard is 3 per 1, shark is 20 per 1, dinosaur is 25 per 1, mundras ins 1 per 1
+
+- Some way to manually specify which if any miniboss should be spawned
+
+- Optimizations
+
+- make sure only one champion per team
