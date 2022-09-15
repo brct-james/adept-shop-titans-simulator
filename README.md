@@ -13,6 +13,10 @@ A rust-based simulator for the game Shop Titans
 
 ## Notes/TODO:
 
+### In-Progress:
+
+- Automatic Trial Generation (Study Struct)
+
 ### Todo:
 
 1. Create logic for automatically setting up trials

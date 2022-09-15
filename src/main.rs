@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use equipment::Blueprint;
 use hero_builder::HeroClass;
-use serde::{Deserialize, Serialize};
 // use std::thread;
 // use std::time::Duration;
 use log::info;
@@ -15,10 +14,9 @@ mod equipment;
 
 mod heroes;
 use crate::hero_builder::_create_hero_class;
-use crate::heroes::{create_team, SimHero, Team};
+use crate::heroes::{create_team, SimHero};
 
 mod dungeons;
-use crate::dungeons::Dungeon;
 
 mod simulations;
 
@@ -26,7 +24,8 @@ mod trials;
 use crate::sheet_processing::{
     _get_hero_equipment_data, _get_hero_skills_data, _get_innate_skills_data,
 };
-use crate::trials::{create_trial, Trial};
+use crate::studies::create_single_hero_skill_study;
+use crate::trials::create_trial;
 
 mod inputs;
 use crate::inputs::{
@@ -42,24 +41,9 @@ mod hero_builder;
 
 mod sheet_processing;
 
-/// Defines valid study types:
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
-enum StudyType {
-    SingleHeroPerformance,
-}
+mod studies;
 
-/// Defines a plan for generating and ranking Trials
-/// A trial is run for each permutation of team/dungeon variation
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-struct Study {
-    identifier: String,
-    description: String,
-    team_variations: Vec<Team>,
-    dungeon_variations: Vec<Dungeon>,
-    simulation_qty: i32,
-    ranking_method: StudyType,
-    trials: Vec<Trial>,
-}
+mod combinations;
 
 fn load_sim_heroes(
     bp_map: HashMap<String, Blueprint>,
@@ -234,7 +218,7 @@ fn main() {
     let heroes = load_sim_heroes(
         bp_map,
         hero_classes,
-        hero_skill_tier_1_name_map,
+        hero_skill_tier_1_name_map.clone(),
         hero_skill_map,
         class_innate_skill_names_map,
         innate_skill_map,
@@ -319,4 +303,23 @@ fn main() {
 
     // println!("{:#?}", _innate_skill_map);
     // println!("{:#?}", _innate_skill_tier_1_name_map);
+
+    let mut study = create_single_hero_skill_study(
+        String::from("OptimizeLord"),
+        String::from("Optimize lord class"),
+        100,
+        100.0,
+        create_team(vec![heroes["Akana"].clone()], None).unwrap(),
+        String::from("Akana"),
+        hero_skill_tier_1_name_map
+            .values()
+            .map(|v| v.clone())
+            .collect(),
+        vec![dungeons["Bleakspire Peak"].clone()],
+    );
+    study.populate_skill_variations();
+    println!(
+        "Skill Variations Remaining to Test: {}",
+        study.count_skill_variations_remaining()
+    );
 }
