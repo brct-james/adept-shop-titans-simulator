@@ -6,6 +6,7 @@ use super::simulations::{create_simulation, SimResult};
 
 use log::info;
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 
 extern crate csv;
 
@@ -153,6 +154,7 @@ pub struct Trial {
 impl Trial {
     pub fn run_simulations_single_threaded(&mut self) {
         while self.results.len() < self.simulation_qty {
+            let timer = Instant::now();
             print!("Running simulation iteration:  # {:#?}", self.results.len());
             info!(
                 "\n\nRunning simulation iteration: # {}\n",
@@ -166,10 +168,11 @@ impl Trial {
                 create_simulation(&self.team, encounter, vec![], self.log_all).unwrap();
             let sim_res = simulation.run().unwrap();
             print!(
-                "\rRunning simulation iteration: # {:#?} | Success: {:#?} in {:#?} rounds\n",
+                "\rRunning simulation iteration: # {:#?} | Success: {:#?} in {:#?} rounds | Took {:#?}ms\n",
                 self.results.len(),
                 sim_res.is_success(),
                 sim_res.get_rounds(),
+                timer.elapsed().as_nanos() as f32 / 1000000.0f32,
             );
             self.results.push(sim_res);
         }

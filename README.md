@@ -1,7 +1,27 @@
 # shop-titans-simulator
 A rust-based simulator for the game Shop Titans
 
-### Goals:
+## MVP
+
+### Requirements:
+
+1. [DONE] The set of all valid skills for a single hero (with or without a static supporting team) can be simulated
+2. Simulation output is aggregated in a useful format by Study/Trial
+3. Skillsets are ranked and results output with emphasis on human-readability
+4. Tool can be easily used by anyone familiar with the command line on both linux and windows
+5. Default data is complete and included with the distribution (e.g. data sheets & input files)
+6. Processing an entire set of skills should not take an unreasonable amount of time
+
+### Roadmap:
+
+1. Generate Skill Combinations
+2. Auto-Generate Trials and Run Simulations from Skill Combos <-- We are here
+3. Aggregation Functions, Ranking, and Better Trial-Based Logging
+4. Ensure Data is Ready for Distribution (e.g. hero classes are all created)
+5. CLI Functionality and Build for Release
+6. Testing with Peetee
+
+## Goals:
 
 1. Rank skill loadouts for individual classes (develop a ranking criteria or relative scoring metric, OR use survival rate but automatically retry anything > 95% at the next highest difficulty until the entire set of builds is ordered correctly and unambiguously)
 
@@ -16,6 +36,17 @@ A rust-based simulator for the game Shop Titans
 ### In-Progress:
 
 - Automatic Trial Generation (Study Struct)
+- - [DONE] Generate deterministic skillsets for each combination
+- - Build machinery for automatically running trials
+- - Build machinery for trial result aggregation
+
+- Changes through 11.0.2:
+- - Elemental barriers are basically magic, so Rudo hates ‘em. Starting at Champion Skill rank 3, Rudo and his team now deal 50% more damage to elemental barriers for the duration of the effect.
+- - The Mage/Archmage classes now receive bonus ATK from staves. To make space for it, the Archmage lost its HP bonus, which was instead added to its base stat progression.
+- - New Blueprint Lines: Meals & Desserts
+- - Fresh Spirit (10% rest time)
+- - Hero classes can now learn the mastery skill of any weapon they can use, including the gold ones (might already be an assumption in the code?)
+- - 
 
 ### Todo:
 
@@ -46,6 +77,8 @@ A rust-based simulator for the game Shop Titans
 14. Additionally, auto-combinations should exclude skills that dont match the equipped gear - if there is no dagger equipped then dagger master should be skipped
 
 15. Perhaps it would be good to have a way to restrict what skills/equipment is available - for example restricting to T10 gear and below or removing a set of X skills for some reason. Goes hand in hand with locking stuff I think
+
+16. When it comes to ranking builds, think of a way to weight the order of the skills in the build if there are empty slots remaining (because if epics are in slots 1-2 that is better for rolling than in 2-3 for example)
 
 ### Notes:
 

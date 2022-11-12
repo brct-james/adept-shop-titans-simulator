@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use std::time::Instant;
+
 use equipment::Blueprint;
 use hero_builder::HeroClass;
 // use std::thread;
@@ -244,7 +246,9 @@ fn main() {
     )
     .unwrap();
 
+    let timer = Instant::now();
     trial.run_simulations_single_threaded();
+    let timer_duration = timer.elapsed().as_nanos() as f32 / 1000000.0f32;
 
     let trial_csv_path = f!("target/csvs/trial_{}.csv", i);
     if let Some(p) = std::path::Path::new(&trial_csv_path).parent() {
@@ -279,7 +283,8 @@ fn main() {
     let avg_encounter_hp_remaining = hp_remaining.iter().sum::<f64>() / hp_remaining.len() as f64;
 
     println!(
-        "Completed. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+        "Completed in {:#?}ms. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+        timer_duration,
         successes,
         res.len(),
         successes as f64 / res.len() as f64 * 100.0,
@@ -290,7 +295,8 @@ fn main() {
         avg_encounter_hp_remaining,
     );
     info!(
-        "Completed. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+        "Completed in {:#?}ms. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+        timer_duration,
         successes,
         res.len(),
         successes as f64 / res.len() as f64 * 100.0,
@@ -310,16 +316,28 @@ fn main() {
         100,
         100.0,
         create_team(vec![heroes["Akana"].clone()], None).unwrap(),
-        String::from("Akana"),
         hero_skill_tier_1_name_map
             .values()
             .map(|v| v.clone())
             .collect(),
+        vec!["Marksman".into()],
+        String::from("Akana"),
         vec![dungeons["Bleakspire Peak"].clone()],
     );
-    study.populate_skill_variations();
     println!(
         "Skill Variations Remaining to Test: {}",
         study.count_skill_variations_remaining()
+    );
+    println!(
+        "Skillset at 100: {:#?}",
+        study
+            .translate_skillset_from_indices(study.get_skillset_at_specific_combination_index(100))
+    );
+    study.increment_combination_index();
+    study.count_skill_variations_completed();
+    study.count_skill_variations_total();
+    println!(
+        "Skillset at current: {:#?}",
+        study.get_full_translated_skillset_at_current_combination_index()
     );
 }
