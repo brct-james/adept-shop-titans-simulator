@@ -21,6 +21,34 @@ A rust-based simulator for the game Shop Titans
 5. CLI Functionality and Build for Release
 6. Testing with Peetee
 
+### Checkpoint Items:
+
+1. Logic for filtering out incompatible skill combos as well as skill combos with more than one bronze or gold weapon skill (e.g. adept, marksman, etc.) - you can have one of each but not two of either
+2. Logic for passing multiple equipment sets for each hero in a team? Or just for one hero?
+
+```md
+So do you think this methodology would be valid:
+1. When starting the simulator you give a list of equipment sets. The simulator uses the weapon in the 1st set (or maybe I add a column called 'isPrimarySet') for the entire proceeding round(s) of simulations.
+2. For the final round of simulations (50k+), the simulator will take the builds above 70 score, and if they have a weapon skill, generate additional combos using the weapons from the other skill sets.
+[11:52 AM]
+* which would obviously replace the skill(s) with the appropriate alternative i.e. wand master to sword master (edited)
+[11:53 AM]
+So you'd still end up testing all of those skills, but you don't waste time generating 4x the total simulations for combos that are dead ends
+[11:53 AM]
+Or is there something I'm overlooking there
+```
+
+3. Maybe develop an easy prefilter and postfilter system, eh? Something that could filter out all specified skills before study creation, and then another that is used during trials to filter out combos conditionally? Also need to save the specific filter sets and/or the skills that were actually used with the results for later display on a webpage. Perhaps postfilter for restricting skills by SLOT so more easy to build cores for duos?
+4. System for generating 'Rounds' of Trials, such that rounds vary by the number of simulations per trial and by how the combinations are created (e.g. initially source deterministically from the csv but later rounds are based on the best combos of the previous round - perhaps in batches for resuming)
+5. Make sure hero_builder.csv identifier has uniqueness enforced
+
+Note: These might be specific to SingleHeroSkillStudy so may not be problematic afterall
+6. Studies appear to have a preset skills list, rather than using the hero_builder from the team to fill in blank skills
+7. Studies appear to take an entire dungeon and not allow customizing the difficulty or minibosses for example.
+8. Studies only take one subject hero, problematically
+
+9. A translator to select a dungeon from "Bleakspire Peaks Boss Hard"
+
 ## Goals:
 
 1. Rank skill loadouts for individual classes (develop a ranking criteria or relative scoring metric, OR use survival rate but automatically retry anything > 95% at the next highest difficulty until the entire set of builds is ordered correctly and unambiguously)

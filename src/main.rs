@@ -26,7 +26,6 @@ mod trials;
 use crate::sheet_processing::{
     _get_hero_equipment_data, _get_hero_skills_data, _get_innate_skills_data,
 };
-use crate::studies::create_single_hero_skill_study;
 use crate::trials::create_trial;
 
 mod inputs;
@@ -44,6 +43,7 @@ mod hero_builder;
 mod sheet_processing;
 
 mod studies;
+use studies::single_hero_skill_study::create_single_hero_skill_study;
 
 mod combinations;
 
@@ -310,16 +310,21 @@ fn main() {
     // println!("{:#?}", _innate_skill_map);
     // println!("{:#?}", _innate_skill_tier_1_name_map);
 
+    let mut valid_skills: Vec<String> = Default::default();
+    for (k, v) in hero_skill_tier_1_name_map {
+        let ksplit: Vec<&str> = k.split(' ').collect();
+        if ksplit[ksplit.len() - 1] == "T4" {
+            valid_skills.push(v.to_string());
+        }
+    }
+
     let mut study = create_single_hero_skill_study(
         String::from("OptimizeLord"),
         String::from("Optimize lord class"),
         100,
         100.0,
         create_team(vec![heroes["Akana"].clone()], None).unwrap(),
-        hero_skill_tier_1_name_map
-            .values()
-            .map(|v| v.clone())
-            .collect(),
+        valid_skills,
         vec!["Marksman".into()],
         String::from("Akana"),
         vec![dungeons["Bleakspire Peak"].clone()],
