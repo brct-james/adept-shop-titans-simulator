@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use std::time::Instant;
-
 use equipment::Blueprint;
 use hero_builder::HeroClass;
 // use std::thread;
@@ -15,6 +13,7 @@ extern crate fstrings;
 mod equipment;
 
 mod heroes;
+use crate::dungeons::create_trial_dungeon;
 use crate::hero_builder::_create_hero_class;
 use crate::heroes::{create_team, SimHero};
 
@@ -26,12 +25,12 @@ mod trials;
 use crate::sheet_processing::{
     _get_hero_equipment_data, _get_hero_skills_data, _get_innate_skills_data,
 };
-use crate::trials::create_trial;
+use crate::studies::{HeroBuilderInformation, Runnable};
 
 mod inputs;
 use crate::inputs::{
     _save_hero_classes_to_yaml, load_dungeons_from_yaml, load_hero_classes_from_yaml,
-    load_heroes_as_sim_heroes_from_csv, load_sim_heroes_from_csv,
+    load_heroes_as_sim_heroes_from_csv, load_heroes_from_csv, load_sim_heroes_from_csv,
 };
 
 mod decimals;
@@ -43,7 +42,7 @@ mod hero_builder;
 mod sheet_processing;
 
 mod studies;
-use studies::single_hero_skill_study::create_single_hero_skill_study;
+use studies::static_duo_skill_study::create_static_duo_skill_study;
 
 mod combinations;
 
@@ -73,7 +72,7 @@ fn load_sim_heroes(
 
     let mut loaded_heroes = load_sim_heroes_from_csv(String::from("input/heroes.csv"))
         .iter()
-        .map(|hero| (hero._get_identifier(), hero.clone()))
+        .map(|hero| (hero.get_identifier(), hero.clone()))
         .collect::<HashMap<String, SimHero>>();
     loaded_heroes.extend(heroes_from_builder);
     return loaded_heroes;
@@ -218,107 +217,120 @@ fn main() {
         "data_sheets/blueprints_v_10.2.1_slash_1.0.1.773.tsv",
     ));
     let heroes = load_sim_heroes(
-        bp_map,
-        hero_classes,
+        bp_map.clone(),
+        hero_classes.clone(),
         hero_skill_tier_1_name_map.clone(),
-        hero_skill_map,
-        class_innate_skill_names_map,
-        innate_skill_map,
+        hero_skill_map.clone(),
+        class_innate_skill_names_map.clone(),
+        innate_skill_map.clone(),
     );
 
-    let team = create_team(vec![heroes["Tammy"].clone()], None).unwrap();
+    // let team = create_team(vec![heroes["Tammy"].clone()], None).unwrap();
 
     let dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
-    let dungeon = dungeons["Bleakspire Peak"].clone();
+    // let dungeon = dungeons["Bleakspire Peak"].clone();
 
-    // Difficulty settings (include all that should apply):
-    // 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
-    // 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
+    // // Difficulty settings (include all that should apply):
+    // // 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
+    // // 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
 
-    let mut trial = create_trial(
-        "debugging".to_string(),
-        100,
-        team,
-        dungeon,
-        vec![6],
-        Some(false),
-        true,
-    )
-    .unwrap();
+    // let mut trial = create_trial(
+    //     "debugging".to_string(),
+    //     100,
+    //     team,
+    //     dungeon,
+    //     vec![6],
+    //     Some(false),
+    //     true,
+    // )
+    // .unwrap();
 
-    let timer = Instant::now();
-    trial.run_simulations_single_threaded();
-    let timer_duration = timer.elapsed().as_nanos() as f32 / 1000000.0f32;
+    // let timer = Instant::now();
+    // trial.run_simulations_single_threaded();
+    // let timer_duration = timer.elapsed().as_nanos() as f32 / 1000000.0f32;
 
-    let trial_csv_path = f!("target/csvs/trial_{}.csv", i);
-    if let Some(p) = std::path::Path::new(&trial_csv_path).parent() {
-        std::fs::create_dir_all(p).unwrap();
-    }
-    trial.save_results_to_csv(trial_csv_path).unwrap();
+    // let trial_csv_path = f!("target/csvs/trial_{}.csv", i);
+    // if let Some(p) = std::path::Path::new(&trial_csv_path).parent() {
+    //     std::fs::create_dir_all(p).unwrap();
+    // }
+    // trial.save_results_to_csv(trial_csv_path).unwrap();
 
-    let res = trial.get_results_unranked();
+    // let trial_result_csv_path = f!("target/csvs/trial_results/trial_{}.csv", 0);
+    // if let Some(p) = std::path::Path::new(&trial_result_csv_path).parent() {
+    //     std::fs::create_dir_all(p).unwrap();
+    // }
+    // trial
+    //     .save_trial_result_to_csv(trial_result_csv_path)
+    //     .unwrap();
 
-    let mut successes = 0;
-    let mut min_rounds = i16::max_value();
-    let mut avg_rounds = 0.0;
-    let mut max_rounds = i16::min_value();
-    let mut dmg_dealt: [Vec<f64>; 5] = Default::default();
-    let mut hp_remaining: Vec<f64> = vec![];
-    for sr in &res {
-        if sr.is_success() {
-            successes += 1;
-        }
-        min_rounds = std::cmp::min(min_rounds, sr.get_rounds());
-        avg_rounds += sr.get_rounds() as f64;
-        max_rounds = std::cmp::max(max_rounds, sr.get_rounds());
-        let dmg_fight = sr.get_damage_dealt_during_fight();
-        for (i, hero_damage) in dmg_fight.iter().enumerate() {
-            dmg_dealt[i].push(*hero_damage);
-        }
-        hp_remaining.push(sr.get_encounter_hp_remaining());
-    }
+    // let res = trial.get_results_unranked();
 
-    avg_rounds = avg_rounds / res.len() as f64;
-    let avg_dmg_dealt_0 = dmg_dealt[0].iter().sum::<f64>() / dmg_dealt[0].len() as f64;
-    let avg_encounter_hp_remaining = hp_remaining.iter().sum::<f64>() / hp_remaining.len() as f64;
+    // let mut successes = 0;
+    // let mut min_rounds = i16::max_value();
+    // let mut avg_rounds = 0.0;
+    // let mut max_rounds = i16::min_value();
+    // let mut dmg_dealt: [Vec<f64>; 5] = Default::default();
+    // let mut hp_remaining: Vec<f64> = vec![];
+    // for sr in &res {
+    //     if sr.is_success() {
+    //         successes += 1;
+    //     }
+    //     min_rounds = std::cmp::min(min_rounds, sr.get_rounds());
+    //     avg_rounds += sr.get_rounds() as f64;
+    //     max_rounds = std::cmp::max(max_rounds, sr.get_rounds());
+    //     let dmg_fight = sr.get_damage_dealt_during_fight();
+    //     for (i, hero_damage) in dmg_fight.iter().enumerate() {
+    //         dmg_dealt[i].push(*hero_damage);
+    //     }
+    //     hp_remaining.push(sr.get_encounter_hp_remaining());
+    // }
 
-    println!(
-        "Completed in {:#?}ms. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
-        timer_duration,
-        successes,
-        res.len(),
-        successes as f64 / res.len() as f64 * 100.0,
-        min_rounds,
-        avg_rounds,
-        max_rounds,
-        avg_dmg_dealt_0,
-        avg_encounter_hp_remaining,
+    // avg_rounds = avg_rounds / res.len() as f64;
+    // let avg_dmg_dealt_0 = dmg_dealt[0].iter().sum::<f64>() / dmg_dealt[0].len() as f64;
+    // let avg_encounter_hp_remaining = hp_remaining.iter().sum::<f64>() / hp_remaining.len() as f64;
+
+    // println!(
+    //     "Completed in {:#?}ms. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+    //     timer_duration,
+    //     successes,
+    //     res.len(),
+    //     successes as f64 / res.len() as f64 * 100.0,
+    //     min_rounds,
+    //     avg_rounds,
+    //     max_rounds,
+    //     avg_dmg_dealt_0,
+    //     avg_encounter_hp_remaining,
+    // );
+    // info!(
+    //     "Completed in {:#?}ms. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
+    //     timer_duration,
+    //     successes,
+    //     res.len(),
+    //     successes as f64 / res.len() as f64 * 100.0,
+    //     min_rounds,
+    //     avg_rounds,
+    //     max_rounds,
+    //     avg_dmg_dealt_0,
+    //     avg_encounter_hp_remaining,
+    // );
+
+    /* STUDIES */
+
+    let heroes_from_builder = load_heroes_from_csv(
+        String::from("input/hero_builder.csv"),
+        bp_map.clone(),
+        hero_classes.clone(),
     );
-    info!(
-        "Completed in {:#?}ms. {:#?} successes of {:#?} simulations. Success Rate: {:.2}%. Rounds Min/Avg/Max: {:#?}/{:.2}/{:#?}. Avg Dmg Dealt By Hero 0: {:.2} leaving avg remaining of {:.2}",
-        timer_duration,
-        successes,
-        res.len(),
-        successes as f64 / res.len() as f64 * 100.0,
-        min_rounds,
-        avg_rounds,
-        max_rounds,
-        avg_dmg_dealt_0,
-        avg_encounter_hp_remaining,
-    );
-
-    // println!("{:#?}", _innate_skill_map);
-    // println!("{:#?}", _innate_skill_tier_1_name_map);
 
     let mut valid_skills: Vec<String> = Default::default();
-    for (k, v) in hero_skill_tier_1_name_map {
+    for (k, v) in &hero_skill_tier_1_name_map {
         let ksplit: Vec<&str> = k.split(' ').collect();
         if ksplit[ksplit.len() - 1] == "T4" {
             valid_skills.push(v.to_string());
         }
     }
 
-    let mut study = create_single_hero_skill_study(
+    let mut study = create_static_duo_skill_study(
         String::from("OptimizeLord"),
         String::from("Optimize lord class"),
         100,
@@ -327,22 +339,38 @@ fn main() {
         valid_skills,
         vec!["Marksman".into()],
         String::from("Akana"),
-        vec![dungeons["Bleakspire Peak"].clone()],
+        heroes_from_builder["Akana"].clone(),
+        vec![create_trial_dungeon(
+            dungeons["Bleakspire Peak"].clone(),
+            3 as usize,
+            None,
+        )],
+        false,
+        HeroBuilderInformation {
+            bp_map,
+            hero_classes,
+            hero_skill_tier_1_name_map,
+            hero_skill_map,
+            class_innate_skill_names_map,
+            innate_skill_map,
+        },
     );
     println!(
         "Skill Variations Remaining to Test: {}",
         study.count_skill_variations_remaining()
     );
-    println!(
-        "Skillset at 100: {:#?}",
-        study
-            .translate_skillset_from_indices(study.get_skillset_at_specific_combination_index(100))
-    );
-    study.increment_combination_index();
-    study.count_skill_variations_completed();
-    study.count_skill_variations_total();
-    println!(
-        "Skillset at current: {:#?}",
-        study.get_full_translated_skillset_at_current_combination_index()
-    );
+    // println!(
+    //     "Skillset at 100: {:#?}",
+    //     study
+    //         .translate_skillset_from_indices(study.get_skillset_at_specific_combination_index(100))
+    // );
+    // study.increment_combination_index();
+    // study.count_skill_variations_completed();
+    // study.count_skill_variations_total();
+    // println!(
+    //     "Skillset at current: {:#?}",
+    //     study.get_full_translated_skillset_at_current_combination_index()
+    // );
+
+    study.run();
 }

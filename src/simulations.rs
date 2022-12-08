@@ -347,6 +347,14 @@ impl SimResult {
         return self.rounds_elapsed;
     }
 
+    pub fn get_encounter(&self) -> Encounter {
+        return self.encounter.clone();
+    }
+
+    pub fn get_team(&self) -> Team {
+        return self.team.clone();
+    }
+
     // pub fn print_team(&self) {
     //     println!("{:#?}", self.team);
     // }

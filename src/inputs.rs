@@ -515,7 +515,7 @@ pub fn create_hero_input(
     };
 }
 
-pub fn _load_heroes_from_csv(
+pub fn load_heroes_from_csv(
     path: String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
@@ -531,6 +531,29 @@ pub fn _load_heroes_from_csv(
         heroes.insert(identifier, hero);
     }
     return heroes;
+}
+
+pub fn convert_loaded_heroes_to_sim_heroes(
+    mut heroes: HashMap<String, Hero>,
+    bp_map: HashMap<String, Blueprint>,
+    hero_skill_tier_1_name_map: HashMap<String, String>,
+    hero_skill_map: HashMap<String, HeroSkill>,
+    class_innate_skill_names_map: HashMap<String, String>,
+    innate_skill_map: HashMap<String, InnateSkill>,
+) -> HashMap<String, SimHero> {
+    let mut result: HashMap<String, SimHero> = Default::default();
+    for (identifier, hero) in &mut heroes {
+        hero.calculate_innate_tier(&class_innate_skill_names_map, &innate_skill_map);
+        hero.calculate_stat_improvements_from_gear_and_skills(
+            &bp_map,
+            &hero_skill_tier_1_name_map,
+            &hero_skill_map,
+            &class_innate_skill_names_map,
+            &innate_skill_map,
+        );
+        result.insert(identifier.to_string(), SimHero::from(hero.clone()));
+    }
+    return result;
 }
 
 pub fn load_heroes_as_sim_heroes_from_csv(

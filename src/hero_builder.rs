@@ -177,6 +177,13 @@ pub fn create_hero(
 }
 
 impl Hero {
+    pub fn set_hero_skills(&mut self, new_skills: Vec<String>) {
+        self.skills[0] = new_skills.get(0).unwrap_or(&String::from("")).to_string();
+        self.skills[1] = new_skills.get(1).unwrap_or(&String::from("")).to_string();
+        self.skills[2] = new_skills.get(2).unwrap_or(&String::from("")).to_string();
+        self.skills[3] = new_skills.get(3).unwrap_or(&String::from("")).to_string();
+    }
+
     pub fn validate_equipment(
         &mut self,
         bp_map: &HashMap<String, Blueprint>,
@@ -921,7 +928,7 @@ impl Hero {
             _ => (),
         }
 
-        println!("--{}--", self.identifier);
+        // println!("--{}--", self.identifier);
         // ATK calc
         let base_atk = self.atk;
         let seeded_atk = base_atk + f64::from(self.atk_seeds * 4);
@@ -934,7 +941,7 @@ impl Hero {
         let modified_atk_gear_value = equip_atk_value * summarized_atk_percent_modifier;
         let final_atk = modified_atk_value + modified_atk_gear_value;
         self.atk = final_atk;
-        println!("final_atk: {}", final_atk);
+        // println!("final_atk: {}", final_atk);
         // ((seeded_atk + gear_spirit_bonus_atk_value + sum(skill_bonus_atk_value)) * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)) + (bonus_atk_value * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)))
 
         // ATK mod calc
@@ -949,7 +956,7 @@ impl Hero {
         let final_def = (seeded_def + equip_def_value + spirit_bonus_def_value)
             * (1.0 + skill_bonus_def_percent + spirit_bonus_def_percent);
         self.def = final_def;
-        println!("final_def: {}", final_def);
+        // println!("final_def: {}", final_def);
 
         // DEF mod
         let final_def_mod = skill_bonus_atk_percent + spirit_bonus_def_percent;
@@ -961,7 +968,7 @@ impl Hero {
         let final_hp = (seeded_hp + equip_hp_value + skill_bonus_hp_value + spirit_bonus_hp_value)
             * (1.0 + skill_bonus_hp_percent + spirit_bonus_hp_percent);
         self.hp = final_hp;
-        println!("final_hp: {}", final_hp);
+        // println!("final_hp: {}", final_hp);
 
         // HP Regen
         let final_hp_regen = skill_bonus_hp_regen_value + spirit_bonus_hp_regen_value;
@@ -999,7 +1006,7 @@ impl Hero {
             + spirit_bonus_survive_fatal_blow_chance_percent;
         self.survive_fatal_blow_chance = final_survive_fatal_blow_chance;
 
-        println!("\n");
+        // println!("\n");
     }
 
     pub fn _round_floats_for_display(&self) -> Hero {

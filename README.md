@@ -66,7 +66,12 @@ Note: These might be specific to SingleHeroSkillStudy so may not be problematic 
 - Automatic Trial Generation (Study Struct)
 - - [DONE] Generate deterministic skillsets for each combination
 - - Build machinery for automatically running trials
+- - - Trials must be saved to a CSV, along with a status for whether they were completed or not
+- - - Trials must be loadable from that CSV to resume execution if an issue occurred
+- - - Trials must log outputs to a CSV (the results of every simulation) - each trial has its own csv in a directory
+- - - - If an error occurred or if a flag is set, verbose output including the rounds of each simulation will be saved to its own folder as a csv or ansi? or markdown? file for each trial. To be clear - output will always be logged, but if the flag is set or if an error occurs the file will not be deleted after that simulation is completed
 - - Build machinery for trial result aggregation
+- - - Studies will read the data from the trial output folder to create a results summary like Peetee's DuoSkillz output, which they will then save as well
 
 - Changes through 11.0.2:
 - - Elemental barriers are basically magic, so Rudo hates ‘em. Starting at Champion Skill rank 3, Rudo and his team now deal 50% more damage to elemental barriers for the duration of the effect.

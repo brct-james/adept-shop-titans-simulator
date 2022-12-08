@@ -8,7 +8,7 @@ pub struct SingleHeroSkillStudy {
     valid_skills: Vec<String>,       // The vector of all skills to be varied upon
     valid_skills_count: i64,         // The number of valid skills to vary upon
     preset_skills: Vec<String>, // A vector containing 0-3 innate skills that are preset and unchanging
-    varying_skill_count: i64,   // The number of skills to vary upon
+    varying_skill_slot_count: i64,   // The number of skill slots to vary
     skill_combination_index: i64, // The current index of the combinations of the valid_skills list being trialed
     dungeons: Vec<Dungeon>,
 }
@@ -38,7 +38,7 @@ pub fn create_single_hero_skill_study(
         subject_hero_identifier,
         valid_skills_count: vs.len() as i64,
         valid_skills: vs,
-        varying_skill_count: 4 - preset_skills.len() as i64,
+        varying_skill_slot_count: 4 - preset_skills.len() as i64,
         preset_skills,
         skill_combination_index: 0,
         dungeons,
@@ -65,27 +65,27 @@ impl SingleHeroSkillStudy {
     pub fn count_skill_variations_total(&self) -> i64 {
         return crate::combinations::count_combinations(
             self.valid_skills_count,
-            self.varying_skill_count,
+            self.varying_skill_slot_count,
         );
     }
     pub fn count_skill_variations_remaining(&self) -> i64 {
         return crate::combinations::count_combinations(
             self.valid_skills_count,
-            self.varying_skill_count,
+            self.varying_skill_slot_count,
         ) - self.skill_combination_index;
     }
     pub fn get_skillset_at_specific_combination_index(&self, combination_index: i64) -> Vec<i64> {
         return crate::combinations::iter_combination(
             combination_index,
             self.valid_skills_count,
-            self.varying_skill_count,
+            self.varying_skill_slot_count,
         );
     }
     pub fn get_skillset_at_current_combination_index(&self) -> Vec<i64> {
         return crate::combinations::iter_combination(
             self.skill_combination_index,
             self.valid_skills_count,
-            self.varying_skill_count,
+            self.varying_skill_slot_count,
         );
     }
     pub fn increment_combination_index(&mut self) {

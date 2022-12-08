@@ -38,6 +38,7 @@ pub struct Encounter {
     defense_cap: f64,
     aoe_damage_base: f64,
     aoe_chance: f64,
+    is_miniboss: bool,
     is_boss: bool,
     is_extreme: bool,
     barrier_type: Option<ElementType>,
@@ -54,6 +55,15 @@ pub struct Encounter {
 impl Encounter {
     pub fn is_extreme_or_boss(&self) -> (bool, bool) {
         return (self.is_extreme, self.is_boss);
+    }
+    pub fn is_miniboss(&self) -> bool {
+        return self.is_miniboss;
+    }
+    pub fn _is_boss(&self) -> bool {
+        return self.is_boss;
+    }
+    pub fn _is_extreme(&self) -> bool {
+        return self.is_extreme;
     }
 
     pub fn get_defense_cap(&self) -> f64 {
@@ -151,27 +161,31 @@ pub fn create_encounter(
     let crit_chance = 0.1;
     let barrier_modifier = 0.2;
     let aoe_damage = aoe_damage_base / damage;
+    let is_miniboss: bool;
 
     match mini_boss {
-        Some(mb) => match mb {
-            MiniBossType::Agile => {
-                evasion = 0.4;
+        Some(mb) => {
+            is_miniboss = true;
+            match mb {
+                MiniBossType::Agile => {
+                    evasion = 0.4;
+                }
+                MiniBossType::Dire => {
+                    hp_modifier = 1.5;
+                    crit_chance_modifier = 3.0;
+                }
+                MiniBossType::Huge => {
+                    hp_modifier = 2.0;
+                }
+                MiniBossType::Legendary => {
+                    hp_modifier = 1.5;
+                    damage_modifier = 1.25;
+                    crit_chance_modifier = 1.5;
+                    evasion = 0.1;
+                }
             }
-            MiniBossType::Dire => {
-                hp_modifier = 1.5;
-                crit_chance_modifier = 3.0;
-            }
-            MiniBossType::Huge => {
-                hp_modifier = 2.0;
-            }
-            MiniBossType::Legendary => {
-                hp_modifier = 1.5;
-                damage_modifier = 1.25;
-                crit_chance_modifier = 1.5;
-                evasion = 0.1;
-            }
-        },
-        _ => (),
+        }
+        _ => is_miniboss = false,
     }
 
     let encounter = Encounter {
@@ -182,6 +196,7 @@ pub fn create_encounter(
         defense_cap,
         aoe_damage_base,
         aoe_chance: aoe_chance / 100.0,
+        is_miniboss,
         is_boss,
         is_extreme,
         barrier_type,
@@ -196,6 +211,38 @@ pub fn create_encounter(
     };
 
     return Ok(encounter);
+}
+
+/// Contains a dungeon and a difficulty settings
+/// Difficulty settings (choose one):
+/// 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
+/// 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
+///
+/// force_minibosses:
+/// false - No Minibosses, true - Only Minibosses, none - Random Chance of Minibosses
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct TrialDungeon {
+    pub dungeon: Dungeon,
+    pub difficulty: usize,
+    pub force_minibosses: Option<bool>,
+}
+
+/// Difficulty settings (choose one):
+/// 1 - Easy, 2 - Medium, 3 - Hard, 4 - Extreme,
+/// 5 - Boss Easy, 6 - Boss Medium, 7 - Boss Hard, 8 - Boss Extreme
+///
+/// force_minibosses:
+/// false - No Minibosses, true - Only Minibosses, none - Random Chance of Minibosses
+pub fn create_trial_dungeon(
+    dungeon: Dungeon,
+    difficulty: usize,
+    force_minibosses: Option<bool>,
+) -> TrialDungeon {
+    return TrialDungeon {
+        dungeon,
+        difficulty,
+        force_minibosses,
+    };
 }
 
 /// Contains information for generating combat Encounters

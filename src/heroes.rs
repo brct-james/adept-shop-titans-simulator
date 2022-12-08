@@ -34,6 +34,33 @@ pub enum HeroArchetype {
 }
 
 impl Team {
+    pub fn get_team_hero_names(&self) -> Vec<String> {
+        let mut res: Vec<String> = Default::default();
+        for hero in self.heroes.iter() {
+            res.push(hero.get_identifier());
+        }
+        return res;
+    }
+
+    pub fn get_index_of_hero_with_identifier(&self, identifier: &String) -> Option<usize> {
+        let mut index = 0;
+        for hero in self.heroes.iter() {
+            if hero.get_identifier().eq(identifier) {
+                return Some(index);
+            }
+            index += 1;
+        }
+        return None;
+    }
+
+    pub fn _get_hero_at_index(&self, index: usize) -> SimHero {
+        return self.heroes[index].clone();
+    }
+
+    pub fn set_hero_at_index(&mut self, index: usize, new_hero: SimHero) {
+        self.heroes[index] = new_hero;
+    }
+
     pub fn round_floats_for_display(&self) -> Team {
         let mut t2 = self.clone();
         let mut heroes: Vec<SimHero> = vec![];
@@ -1202,7 +1229,7 @@ pub struct SimHero {
 }
 
 impl SimHero {
-    pub fn _get_identifier(&self) -> String {
+    pub fn get_identifier(&self) -> String {
         return self.identifier.to_string();
     }
 
