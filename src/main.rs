@@ -214,7 +214,7 @@ fn main() {
         ));
 
     let bp_map = _get_hero_equipment_data(String::from(
-        "data_sheets/blueprints_v_10.2.1_slash_1.0.1.773.tsv",
+        "data_sheets/blueprints_v_11.1.1_slash_1.0.1.868.tsv",
     ));
     let heroes = load_sim_heroes(
         bp_map.clone(),
@@ -331,19 +331,26 @@ fn main() {
     }
 
     let mut study = create_static_duo_skill_study(
-        String::from("OptimizeLord"),
-        String::from("Optimize lord class"),
-        100,
+        String::from("Daimyo_Atk_Main"),
+        String::from("Optimize Daimyo for ATK with Lord Duo"),
+        50,
         100.0,
-        create_team(vec![heroes["Akana"].clone()], None).unwrap(),
+        create_team(
+            vec![
+                heroes["Lord_Control"].clone(),
+                heroes["Daimyo-Atk_Test_Main"].clone(),
+            ],
+            None,
+        )
+        .unwrap(),
         valid_skills,
-        vec!["Marksman".into()],
-        String::from("Akana"),
-        heroes_from_builder["Akana"].clone(),
+        vec!["Sword Master".into(), "Warlord".into()],
+        String::from("Daimyo-Atk_Test_Main"),
+        heroes_from_builder["Daimyo-Atk_Test_Main"].clone(),
         vec![create_trial_dungeon(
             dungeons["Bleakspire Peak"].clone(),
-            3 as usize,
-            None,
+            7 as usize,
+            Some(false),
         )],
         false,
         HeroBuilderInformation {

@@ -73,14 +73,17 @@ impl Runnable for StaticDuoSkillStudy {
 
         while self.count_skill_variations_remaining() > 0 {
             pb.set_position(self.skill_combination_index.try_into().unwrap());
+
+            // Create the combination of skills to test
+            let skill_variation = self.get_full_translated_skillset_at_current_combination_index();
+
             // Vary the target hero in the team
             let mut new_team = self.base_team.clone();
             let target_hero_index = new_team
                 .get_index_of_hero_with_identifier(&self.subject_hero_identifier)
                 .unwrap();
             let mut new_hero = self.subject_hero_builder.clone();
-            new_hero
-                .set_hero_skills(self.get_full_translated_skillset_at_current_combination_index());
+            new_hero.set_hero_skills(skill_variation.clone());
             let heroes_hashmap: HashMap<String, crate::hero_builder::Hero> =
                 HashMap::from([(self.subject_hero_identifier.to_string(), new_hero)]);
             let new_sim_heroes = convert_loaded_heroes_to_sim_heroes(
@@ -126,6 +129,7 @@ impl Runnable for StaticDuoSkillStudy {
             // Create new trial with new team
             let mut trial = create_trial(
                 format!("{}", self.study.identifier),
+                format!("{:?}", skill_variation),
                 self.study.simulation_qty as usize,
                 new_team,
                 self.dungeons[0].dungeon.clone(),

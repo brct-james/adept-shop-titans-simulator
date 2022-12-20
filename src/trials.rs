@@ -141,6 +141,7 @@ fn _create_trial_csv_record(
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Trial {
     identifier: String,
+    description: String,
     simulation_qty: usize,
     team: Team,
     dungeon: Dungeon,
@@ -301,6 +302,7 @@ impl Trial {
 
         let trial_result = TrialResult {
             trial_identifier: self.identifier.to_string(),
+            trial_description: self.description.to_string(),
             trial_simulation_qty: self.simulation_qty,
             dungeon_identifier: self.dungeon._get_zone(),
             difficulty_settings: self.difficulty_settings.clone(),
@@ -388,6 +390,7 @@ impl Trial {
 /// Create a trial performing type validation and calculating certain fields
 pub fn create_trial(
     identifier: String,
+    description: String,
     simulation_qty: usize,
     team: Team,
     dungeon: Dungeon,
@@ -401,6 +404,7 @@ pub fn create_trial(
 
     let trial = Trial {
         identifier,
+        description,
         simulation_qty,
         team,
         dungeon,
@@ -417,6 +421,7 @@ pub fn create_trial(
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TrialResult {
     trial_identifier: String,
+    trial_description: String,
     trial_simulation_qty: usize,
     dungeon_identifier: String,
     difficulty_settings: Vec<usize>,
@@ -443,6 +448,7 @@ pub struct TrialResult {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct TrialResultCSVRecord {
     trial_identifier: String,
+    trial_description: String,
     trial_simulation_qty: usize,
     dungeon_identifier: String,
     difficulty_settings: String,
@@ -590,6 +596,7 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
 
     let t_csv_rec = TrialResultCSVRecord {
         trial_identifier: result.trial_identifier,
+        trial_description: result.trial_description,
         trial_simulation_qty: result.trial_simulation_qty,
         dungeon_identifier: result.dungeon_identifier,
         difficulty_settings: format!("{:?}", new_diff_settings),
