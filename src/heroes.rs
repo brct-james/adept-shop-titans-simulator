@@ -993,7 +993,7 @@ impl Team {
                 ));
                 let mut before_hp = hero.hp;
 
-                hero.hp = f64::min(hero.hp_regen, hero.hp_max);
+                hero.hp = f64::min(before_hp + hero.hp_regen, hero.hp_max);
                 log_queue.push(f!(
                     "Hero {} regenerates for {:.2}",
                     hero.identifier,
