@@ -29,7 +29,7 @@ use crate::studies::{HeroBuilderInformation, Runnable};
 mod inputs;
 use crate::inputs::{
     load_dungeons_from_yaml, load_hero_classes_from_yaml, load_heroes_as_sim_heroes_from_csv,
-    load_heroes_from_csv, load_sim_heroes_from_csv,
+    load_heroes_from_csv, load_sim_heroes_from_csv, load_skill_abbreviation_map,
 };
 
 mod decimals;
@@ -187,6 +187,10 @@ fn main() {
     // let team = create_team(vec![heroes["Tammy"].clone()], None).unwrap();
 
     let dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
+
+    let skill_abbreviation_map: HashMap<String, String> =
+        load_skill_abbreviation_map(String::from("data_sheets/skill_abbreviation_map.csv"));
+
     // let dungeon = dungeons["Bleakspire Peak"].clone();
 
     // // Difficulty settings (include all that should apply):
@@ -296,8 +300,8 @@ fn main() {
         100.0,
         create_team(
             vec![
-                heroes["Lord_Control"].clone(),
                 heroes["Daimyo-Atk_Test_Main"].clone(),
+                heroes["Lord_Control"].clone(),
             ],
             None,
         )
@@ -325,6 +329,7 @@ fn main() {
             class_innate_skill_names_map,
             innate_skill_map,
         },
+        skill_abbreviation_map,
     );
     println!(
         "Skill Variations Remaining to Test: {}",

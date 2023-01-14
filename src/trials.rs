@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::decimals::{round_to_2, round_to_4};
 
 use super::dungeons::Dungeon;
@@ -226,7 +228,7 @@ impl Trial {
             miniboss_results_length = 1
         }
 
-        let mut vec_hero_survival_rate: [Vec<u64>; 5] = Default::default();
+        let mut vec_hero_survival_rate: [Vec<f64>; 5] = Default::default();
         let mut vec_hero_avg_hp_remaining: [Vec<f64>; 5] = Default::default();
         let mut vec_hero_avg_dmg: [Vec<f64>; 5] = Default::default();
         let mut vec_hero_avg_dodges: [Vec<f64>; 5] = Default::default();
@@ -244,8 +246,11 @@ impl Trial {
             let team_crits_dealt = res.get_team_crits_dealt();
             let team_crits_taken = res.get_team_crits_taken();
             for i in 0..5 {
-                let survived = team_hp_rem[i] > 0.0;
-                vec_hero_survival_rate[i].push(survived as u64);
+                let mut survived: f64 = 0.0;
+                if team_hp_rem[i] > 0.0 {
+                    survived = 1.0;
+                }
+                vec_hero_survival_rate[i].push(survived);
                 vec_hero_avg_hp_remaining[i].push(team_hp_rem[i]);
                 vec_hero_avg_dmg[i].push(team_dmg_dealt[i]);
                 vec_hero_avg_dodges[i].push((sim_rounds - (team_dodges[i] as f64)) / sim_rounds);
@@ -261,7 +266,7 @@ impl Trial {
         let hero_names: Vec<String> = all_results[0].get_team().get_team_hero_names();
         let hero_survival_rate: [f64; 5] = vec_hero_survival_rate
             .iter()
-            .map(|sr| (sr.iter().sum::<u64>() / sr.len() as u64) as f64)
+            .map(|sr| sr.iter().sum::<f64>() / sr.len() as f64)
             .collect::<Vec<f64>>()
             .try_into()
             .unwrap();
@@ -386,6 +391,50 @@ impl Trial {
         wtr.flush()?;
         return Ok(());
     }
+
+    pub fn save_duo_skillz_and_trial_result_to_csv(
+        &self,
+        duo_skillz_path: String,
+        trial_results_path: String,
+        skill_abbreviation_map: HashMap<String, String>,
+    ) -> Result<(), std::io::Error> {
+        // Save Trial Result
+        self.save_trial_result_to_csv(trial_results_path).unwrap();
+
+        // Save Duo Skillz Result
+        let path = std::path::Path::new(&duo_skillz_path);
+        let path_exists = path.exists();
+
+        let file = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .append(true)
+            .open(path)
+            .unwrap();
+
+        let mut wtr: csv::Writer<std::fs::File>;
+        if path_exists {
+            wtr = csv::WriterBuilder::new()
+                .has_headers(false)
+                .from_writer(file);
+        } else {
+            wtr = csv::WriterBuilder::new()
+                .has_headers(true)
+                .from_writer(file);
+        }
+
+        let trial_result = self.create_trial_result();
+
+        let record = create_peetee_duoskillz_trial_result_csv_record_from_trial_result(
+            trial_result,
+            skill_abbreviation_map,
+        );
+
+        wtr.serialize(record.round_floats_for_display())?;
+
+        wtr.flush()?;
+        return Ok(());
+    }
 }
 
 /// Create a trial performing type validation and calculating certain fields
@@ -463,7 +512,7 @@ struct TrialResultCSVRecord {
     avg_encounter_hp_remaining_vs_miniboss: f64,
 
     hero_1_identifier: String,
-    hero_1_survival_rate: f64,
+    hero_1_survival_rate: String,
     hero_1_avg_hp_remaining: f64,
     hero_1_avg_dmg: f64,
     hero_1_avg_dodge_rate: f64,
@@ -472,7 +521,7 @@ struct TrialResultCSVRecord {
     hero_1_avg_crit_taken_rate: f64,
 
     hero_2_identifier: String,
-    hero_2_survival_rate: f64,
+    hero_2_survival_rate: String,
     hero_2_avg_hp_remaining: f64,
     hero_2_avg_dmg: f64,
     hero_2_avg_dodge_rate: f64,
@@ -481,7 +530,7 @@ struct TrialResultCSVRecord {
     hero_2_avg_crit_taken_rate: f64,
 
     hero_3_identifier: String,
-    hero_3_survival_rate: f64,
+    hero_3_survival_rate: String,
     hero_3_avg_hp_remaining: f64,
     hero_3_avg_dmg: f64,
     hero_3_avg_dodge_rate: f64,
@@ -490,7 +539,7 @@ struct TrialResultCSVRecord {
     hero_3_avg_crit_taken_rate: f64,
 
     hero_4_identifier: String,
-    hero_4_survival_rate: f64,
+    hero_4_survival_rate: String,
     hero_4_avg_hp_remaining: f64,
     hero_4_avg_dmg: f64,
     hero_4_avg_dodge_rate: f64,
@@ -499,7 +548,7 @@ struct TrialResultCSVRecord {
     hero_4_avg_crit_taken_rate: f64,
 
     hero_5_identifier: String,
-    hero_5_survival_rate: f64,
+    hero_5_survival_rate: String,
     hero_5_avg_hp_remaining: f64,
     hero_5_avg_dmg: f64,
     hero_5_avg_dodge_rate: f64,
@@ -518,7 +567,6 @@ impl TrialResultCSVRecord {
         tcr2.avg_encounter_hp_remaining_vs_miniboss =
             round_to_2(tcr2.avg_encounter_hp_remaining_vs_miniboss);
 
-        tcr2.hero_1_survival_rate = round_to_2(tcr2.hero_1_survival_rate);
         tcr2.hero_1_avg_hp_remaining = round_to_2(tcr2.hero_1_avg_hp_remaining);
         tcr2.hero_1_avg_dmg = round_to_2(tcr2.hero_1_avg_dmg);
         tcr2.hero_1_avg_dodge_rate = round_to_2(tcr2.hero_1_avg_dodge_rate);
@@ -526,7 +574,6 @@ impl TrialResultCSVRecord {
         tcr2.hero_1_avg_crit_dealt_rate = round_to_2(tcr2.hero_1_avg_crit_dealt_rate);
         tcr2.hero_1_avg_crit_taken_rate = round_to_2(tcr2.hero_1_avg_crit_taken_rate);
 
-        tcr2.hero_2_survival_rate = round_to_2(tcr2.hero_2_survival_rate);
         tcr2.hero_2_avg_hp_remaining = round_to_2(tcr2.hero_2_avg_hp_remaining);
         tcr2.hero_2_avg_dmg = round_to_2(tcr2.hero_2_avg_dmg);
         tcr2.hero_2_avg_dodge_rate = round_to_2(tcr2.hero_2_avg_dodge_rate);
@@ -534,7 +581,6 @@ impl TrialResultCSVRecord {
         tcr2.hero_2_avg_crit_dealt_rate = round_to_2(tcr2.hero_2_avg_crit_dealt_rate);
         tcr2.hero_2_avg_crit_taken_rate = round_to_2(tcr2.hero_2_avg_crit_taken_rate);
 
-        tcr2.hero_3_survival_rate = round_to_2(tcr2.hero_3_survival_rate);
         tcr2.hero_3_avg_hp_remaining = round_to_2(tcr2.hero_3_avg_hp_remaining);
         tcr2.hero_3_avg_dmg = round_to_2(tcr2.hero_3_avg_dmg);
         tcr2.hero_3_avg_dodge_rate = round_to_2(tcr2.hero_3_avg_dodge_rate);
@@ -542,7 +588,6 @@ impl TrialResultCSVRecord {
         tcr2.hero_3_avg_crit_dealt_rate = round_to_2(tcr2.hero_3_avg_crit_dealt_rate);
         tcr2.hero_3_avg_crit_taken_rate = round_to_2(tcr2.hero_3_avg_crit_taken_rate);
 
-        tcr2.hero_4_survival_rate = round_to_2(tcr2.hero_4_survival_rate);
         tcr2.hero_4_avg_hp_remaining = round_to_2(tcr2.hero_4_avg_hp_remaining);
         tcr2.hero_4_avg_dmg = round_to_2(tcr2.hero_4_avg_dmg);
         tcr2.hero_4_avg_dodge_rate = round_to_2(tcr2.hero_4_avg_dodge_rate);
@@ -550,7 +595,6 @@ impl TrialResultCSVRecord {
         tcr2.hero_4_avg_crit_dealt_rate = round_to_2(tcr2.hero_4_avg_crit_dealt_rate);
         tcr2.hero_4_avg_crit_taken_rate = round_to_2(tcr2.hero_4_avg_crit_taken_rate);
 
-        tcr2.hero_5_survival_rate = round_to_2(tcr2.hero_5_survival_rate);
         tcr2.hero_5_avg_hp_remaining = round_to_2(tcr2.hero_5_avg_hp_remaining);
         tcr2.hero_5_avg_dmg = round_to_2(tcr2.hero_5_avg_dmg);
         tcr2.hero_5_avg_dodge_rate = round_to_2(tcr2.hero_5_avg_dodge_rate);
@@ -613,7 +657,7 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
             .get(0)
             .unwrap_or(&String::from(""))
             .to_string(),
-        hero_1_survival_rate: result.hero_survival_rate[0],
+        hero_1_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[0])),
         hero_1_avg_hp_remaining: result.hero_avg_hp_remaining[0],
         hero_1_avg_dmg: result.hero_avg_dmg[0],
         hero_1_avg_dodge_rate: result.hero_avg_dodge_rate[0],
@@ -626,7 +670,7 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
             .get(1)
             .unwrap_or(&String::from(""))
             .to_string(),
-        hero_2_survival_rate: result.hero_survival_rate[1],
+        hero_2_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[1])),
         hero_2_avg_hp_remaining: result.hero_avg_hp_remaining[1],
         hero_2_avg_dmg: result.hero_avg_dmg[1],
         hero_2_avg_dodge_rate: result.hero_avg_dodge_rate[1],
@@ -639,7 +683,7 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
             .get(2)
             .unwrap_or(&String::from(""))
             .to_string(),
-        hero_3_survival_rate: result.hero_survival_rate[2],
+        hero_3_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[2])),
         hero_3_avg_hp_remaining: result.hero_avg_hp_remaining[2],
         hero_3_avg_dmg: result.hero_avg_dmg[2],
         hero_3_avg_dodge_rate: result.hero_avg_dodge_rate[2],
@@ -652,7 +696,7 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
             .get(3)
             .unwrap_or(&String::from(""))
             .to_string(),
-        hero_4_survival_rate: result.hero_survival_rate[3],
+        hero_4_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[3])),
         hero_4_avg_hp_remaining: result.hero_avg_hp_remaining[3],
         hero_4_avg_dmg: result.hero_avg_dmg[3],
         hero_4_avg_dodge_rate: result.hero_avg_dodge_rate[3],
@@ -665,13 +709,143 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
             .get(4)
             .unwrap_or(&String::from(""))
             .to_string(),
-        hero_5_survival_rate: result.hero_survival_rate[4],
+        hero_5_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[4])),
         hero_5_avg_hp_remaining: result.hero_avg_hp_remaining[4],
         hero_5_avg_dmg: result.hero_avg_dmg[4],
         hero_5_avg_dodge_rate: result.hero_avg_dodge_rate[4],
         hero_5_avg_atk_hit_rate: result.hero_avg_atk_hit_rate[4],
         hero_5_avg_crit_dealt_rate: result.hero_avg_crit_dealt_rate[4],
         hero_5_avg_crit_taken_rate: result.hero_avg_crit_taken_rate[4],
+    };
+
+    return t_csv_rec;
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+struct PeeteeDuoSkillzTrialResultCSVRecord {
+    skill_1: String,     // 3-letter Code, not T1 Name
+    skill_2: String,     // 3-letter Code, not T1 Name
+    skill_3: String,     // 3-letter Code, not T1 Name
+    skill_4: String,     // 3-letter Code, not T1 Name
+    atk: String,         // Not used
+    def: String,         // Not used
+    hp: String,          // Not used
+    eva: String,         // Not used
+    crit_damage: String, // Not used
+    crit_chance: String, // Not used
+    attack_mod: String,  // Not used
+    def_mod: String,     // Not used
+    exp_atk: String,     // Not Used
+    quest_success_rate_percent: String,
+    avg_rounds: f64,
+    target_hero_survival_rate: String,
+    target_hero_avg_hp_remaining: f64,
+    target_hero_avg_dmg: f64,
+    control_hero_survival_rate: String,
+
+    blank_column: String,
+
+    trial_num_minibosses: usize,
+    force_minibosses: String,
+    difficulty_settings: String,
+    dungeon_identifier: String,
+    trial_simulation_qty: usize,
+    trial_description: String,
+    trial_identifier: String,
+}
+
+impl PeeteeDuoSkillzTrialResultCSVRecord {
+    pub fn round_floats_for_display(&self) -> PeeteeDuoSkillzTrialResultCSVRecord {
+        let mut tcr2 = self.clone();
+
+        tcr2.avg_rounds = round_to_4(tcr2.avg_rounds);
+        tcr2.target_hero_avg_hp_remaining = round_to_2(tcr2.target_hero_avg_hp_remaining);
+        tcr2.target_hero_avg_dmg = round_to_2(tcr2.target_hero_avg_dmg);
+
+        return tcr2;
+    }
+}
+
+/// Create a trial csv record performing type validation and calculating certain fields
+/// ASSUMES THAT THE TARGET HERO IS HERO 1 AND THE CONTROL HERO IS HERO 2
+fn create_peetee_duoskillz_trial_result_csv_record_from_trial_result(
+    result: TrialResult,
+    skill_abbreviation_map: HashMap<String, String>,
+) -> PeeteeDuoSkillzTrialResultCSVRecord {
+    let mut new_diff_settings: Vec<&str> = Default::default();
+    let diff_map: std::collections::HashMap<usize, &str> = std::collections::HashMap::from([
+        (1 as usize, "Easy"),
+        (2 as usize, "Medium"),
+        (3 as usize, "Hard"),
+        (4 as usize, "Extreme"),
+        (5 as usize, "Boss Easy"),
+        (6 as usize, "Boss Medium"),
+        (7 as usize, "Boss Hard"),
+        (8 as usize, "Boss Extreme"),
+    ]);
+
+    for diff in result.difficulty_settings {
+        new_diff_settings.push(diff_map[&diff]);
+    }
+
+    let new_force_miniboss: String;
+
+    match result.force_minibosses {
+        Some(setting) => {
+            if setting == true {
+                new_force_miniboss = String::from("Force Only Minibosses")
+            } else {
+                new_force_miniboss = String::from("No Minibosses Allowed")
+            }
+        }
+        None => new_force_miniboss = String::from("Minibosses Allowed with Random Chance"),
+    }
+
+    let skills_split: Vec<String> = result
+        .trial_description
+        .replace(&['[', ']', '"'][..], "")
+        .split(", ")
+        .map(|s| s.to_string())
+        .collect();
+    let mut skills_abbr: Vec<String> = vec![];
+    for skill in skills_split {
+        let abbr = skill_abbreviation_map.get(&skill);
+        match abbr {
+            Some(abbreviation) => skills_abbr.push(abbreviation.to_string()),
+            None => skills_abbr.push(skill),
+        }
+    }
+
+    let t_csv_rec = PeeteeDuoSkillzTrialResultCSVRecord {
+        skill_1: skills_abbr[0].to_string(), // 3-letter Code, not T1 Name
+        skill_2: skills_abbr[1].to_string(), // 3-letter Code, not T1 Name
+        skill_3: skills_abbr[2].to_string(), // 3-letter Code, not T1 Name
+        skill_4: skills_abbr[3].to_string(), // 3-letter Code, not T1 Name
+        atk: String::from(""),               // Not used
+        def: String::from(""),               // Not used
+        hp: String::from(""),                // Not used
+        eva: String::from(""),               // Not used
+        crit_damage: String::from(""),       // Not used
+        crit_chance: String::from(""),       // Not used
+        attack_mod: String::from(""),        // Not used
+        def_mod: String::from(""),           // Not used
+        exp_atk: String::from(""),           // Not Used
+        quest_success_rate_percent: f!("{:.4}", round_to_4(result.success_rate)),
+        avg_rounds: result.average_rounds,
+        target_hero_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[0])),
+        target_hero_avg_hp_remaining: result.hero_avg_hp_remaining[0],
+        target_hero_avg_dmg: result.hero_avg_dmg[0],
+        control_hero_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[1])),
+
+        blank_column: String::from(""),
+
+        trial_num_minibosses: result.trial_num_minibosses,
+        force_minibosses: new_force_miniboss,
+        difficulty_settings: format!("{:?}", new_diff_settings),
+        dungeon_identifier: result.dungeon_identifier,
+        trial_simulation_qty: result.trial_simulation_qty,
+        trial_description: result.trial_description,
+        trial_identifier: result.trial_identifier,
     };
 
     return t_csv_rec;

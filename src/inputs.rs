@@ -515,6 +515,13 @@ pub fn create_hero_input(
     };
 }
 
+/// Defines SkillAbbreviationMap format for deserialization from CSV
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct SkillAbbreviationMapInput {
+    skill: String,
+    abbreviation: String,
+}
+
 pub fn load_heroes_from_csv(
     path: String,
     bp_map: HashMap<String, Blueprint>,
@@ -586,6 +593,18 @@ pub fn load_heroes_as_sim_heroes_from_csv(
         heroes.insert(identifier, SimHero::from(hero));
     }
     return heroes;
+}
+
+pub fn load_skill_abbreviation_map(path: String) -> HashMap<String, String> {
+    let mut abbr_map: HashMap<String, String> = Default::default();
+    let mut reader = csv::Reader::from_path(path).unwrap();
+    for result in reader.deserialize() {
+        let abbr: SkillAbbreviationMapInput = result.unwrap();
+        let skill = abbr.skill.to_string().split(" (").collect::<Vec<&str>>()[0].to_string(); // Split skill on " (" to get rid of the descriptive stuff and only include the name
+        let abbreviation = abbr.abbreviation.to_string();
+        abbr_map.insert(skill, abbreviation);
+    }
+    return abbr_map;
 }
 
 pub fn _save_heroes_to_csv(

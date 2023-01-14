@@ -21,6 +21,7 @@ pub struct StaticDuoSkillStudy {
     skill_combination_index: i64, // The current index of the combinations of the valid_skills list being trialed
     dungeons: Vec<TrialDungeon>, // The dungeons to be tested in the study. Only the first will be used unless automatic_rank_difficulty_optimization is enabled
     _automatic_rank_difficulty_optimization: bool, // Whether to optimize ranking by testing skills above a certain rank on additional dungeons
+    skill_abbreviation_map: HashMap<String, String>, // The map used to translate Skill Tier 1 names to Peetee's DuoSkillz Abbreviations
 }
 
 pub fn create_static_duo_skill_study(
@@ -36,6 +37,7 @@ pub fn create_static_duo_skill_study(
     dungeons: Vec<TrialDungeon>,
     automatic_rank_difficulty_optimization: bool,
     hero_builder_information: HeroBuilderInformation,
+    skill_abbreviation_map: HashMap<String, String>,
 ) -> StaticDuoSkillStudy {
     let mut vs = valid_skills.clone();
     vs.retain(|x| !preset_skills.contains(x));
@@ -58,6 +60,7 @@ pub fn create_static_duo_skill_study(
         skill_combination_index: 0,
         dungeons,
         _automatic_rank_difficulty_optimization: automatic_rank_difficulty_optimization,
+        skill_abbreviation_map,
     };
 }
 
@@ -145,6 +148,14 @@ impl Runnable for StaticDuoSkillStudy {
             let timer_duration = timer.elapsed().as_nanos() as f32 / 1000000.0f32;
             info!("Completed trial in {:#?}ms.", timer_duration,);
 
+            // Save Duo Skillz Results
+            let duo_skillz_result_csv_path = f!(
+                "target/simulations/{}/csvs/duo_skillz_results.csv",
+                self.study.identifier
+            );
+            if let Some(p) = std::path::Path::new(&duo_skillz_result_csv_path).parent() {
+                std::fs::create_dir_all(p).unwrap();
+            }
             // Save Trial Results
             let trial_result_csv_path = f!(
                 "target/simulations/{}/csvs/trial_results.csv",
@@ -154,7 +165,11 @@ impl Runnable for StaticDuoSkillStudy {
                 std::fs::create_dir_all(p).unwrap();
             }
             trial
-                .save_trial_result_to_csv(trial_result_csv_path)
+                .save_duo_skillz_and_trial_result_to_csv(
+                    duo_skillz_result_csv_path,
+                    trial_result_csv_path,
+                    self.skill_abbreviation_map.clone(),
+                )
                 .unwrap();
             self.increment_combination_index();
         }
