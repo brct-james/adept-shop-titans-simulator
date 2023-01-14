@@ -78,7 +78,7 @@ impl Simulation {
         self.encounter.init_barrier_modifier();
 
         // Define targetting variables
-        let mut target_chance_heroes = [0f64; 4];
+        let mut target_chance_heroes: Vec<f64> = Default::default();
 
         // Define heroes alive
         let mut heroes_alive = self.team.get_heroes_len();
@@ -125,7 +125,7 @@ impl Simulation {
                 lord_save,
                 round,
                 update_target,
-                target_chance_heroes,
+                target_chance_heroes.clone(),
                 crit_chance,
                 crit_chance_modifier,
             );
@@ -275,7 +275,7 @@ impl Simulation {
         if won_fight {
             log_queue.push("Won Simulation".to_string());
         } else {
-            log_queue.push("Lost Simulation".to_string());
+            log_queue.push("ALERT: Lost Simulation".to_string());
         }
 
         if self.log_all || !won_fight {

@@ -1,6 +1,10 @@
 # shop-titans-simulator
 A rust-based simulator for the game Shop Titans
 
+## Update Notes:
+
+1. Quintessence Purity is missing Water affinity, must check/update if downloading new blueprints sheet.
+
 ## MVP
 
 ### Requirements:

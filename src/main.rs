@@ -14,7 +14,6 @@ mod equipment;
 
 mod heroes;
 use crate::dungeons::create_trial_dungeon;
-use crate::hero_builder::_create_hero_class;
 use crate::heroes::{create_team, SimHero};
 
 mod dungeons;
@@ -29,8 +28,8 @@ use crate::studies::{HeroBuilderInformation, Runnable};
 
 mod inputs;
 use crate::inputs::{
-    _save_hero_classes_to_yaml, load_dungeons_from_yaml, load_hero_classes_from_yaml,
-    load_heroes_as_sim_heroes_from_csv, load_heroes_from_csv, load_sim_heroes_from_csv,
+    load_dungeons_from_yaml, load_hero_classes_from_yaml, load_heroes_as_sim_heroes_from_csv,
+    load_heroes_from_csv, load_sim_heroes_from_csv,
 };
 
 mod decimals;
@@ -79,66 +78,26 @@ fn load_sim_heroes(
 }
 
 fn main() {
+    let study_identifier = String::from("Daimyo_Atk_Main_Single");
     let mut i = 0;
-    while std::path::Path::new(&f!("target/logs/trial_{}.log", i)).exists() {
-        // Create new log file each run
-        i += 1;
+
+    // Create new log file each run
+    let mut trial_logs_path: String;
+    loop {
+        trial_logs_path = f!(
+            "target/simulations/{}/logs/trial_{}.csv",
+            study_identifier,
+            i
+        );
+        // Increment until file not exist, then create and break
+        if std::path::Path::new(&trial_logs_path).exists() {
+            i += 1;
+            continue;
+        }
+        break;
     }
-    fast_log::init(fast_log::Config::new().file(&f!("target/logs/trial_{}.log", i))).unwrap();
+    fast_log::init(fast_log::Config::new().file(&trial_logs_path)).unwrap();
     info!("Start of Log File");
-
-    let hc_hm = HashMap::from([(
-        String::from("Jarl"),
-        _create_hero_class(
-            String::from("Jarl"),
-            String::from("Titan Soul (Berserker)"),
-            0,
-            0,
-            vec![
-                100.0, 105.0, 110.0, 115.0, 120.0, 125.0, 130.0, 135.0, 140.0, 150.0, 160.0, 170.0,
-                180.0, 190.0, 200.0, 210.0, 220.0, 230.0, 240.0, 250.0, 265.0, 280.0, 295.0, 310.0,
-                325.0, 340.0, 355.0, 370.0, 385.0, 400.0, 420.0, 440.0, 460.0, 480.0, 500.0, 520.0,
-                540.0, 560.0, 580.0, 600.0,
-            ],
-            vec![
-                75.0, 81.0, 87.0, 94.0, 100.0, 106.0, 112.0, 119.0, 125.0, 137.0, 150.0, 162.0,
-                175.0, 187.0, 200.0, 212.0, 225.0, 237.0, 250.0, 262.0, 281.0, 300.0, 319.0, 337.0,
-                356.0, 375.0, 394.0, 412.0, 431.0, 450.0, 475.0, 500.0, 525.0, 550.0, 575.0, 600.0,
-                625.0, 650.0, 675.0, 700.0,
-            ],
-            vec![
-                90.0, 95.0, 100.0, 105.0, 110.0, 115.0, 121.0, 126.0, 131.0, 141.0, 151.0, 161.0,
-                172.0, 182.0, 192.0, 202.0, 212.0, 223.0, 233.0, 243.0, 258.0, 274.0, 289.0, 304.0,
-                319.0, 335.0, 350.0, 365.0, 381.0, 396.0, 416.0, 437.0, 457.0, 478.0, 498.0, 518.0,
-                539.0, 559.0, 580.0, 600.0,
-            ],
-            0.0,
-            0.05,
-            2.0,
-            90,
-            String::from("Fire"),
-            [
-                vec![
-                    String::from("Mace"),
-                    String::from("Axe"),
-                    String::from("Gun"),
-                ],
-                vec![String::from("Heavy Armor")],
-                vec![String::from("Gauntlets"), String::from("Helmet")],
-                vec![String::from("Heavy Footwear")],
-                vec![String::from("Shield"), String::from("Cloak")],
-                vec![String::from("Herbal Medicine"), String::from("Potion")],
-            ],
-            [
-                String::from("Berserk Rage"),
-                String::from("Anger Point"),
-                String::from("The Beast Within"),
-                String::from("The Beast Unleashed"),
-            ],
-        ),
-    )]);
-
-    _save_hero_classes_to_yaml(String::from("input/hero_classes.yaml"), hc_hm).unwrap();
 
     let hero_classes = load_hero_classes_from_yaml(String::from("input/hero_classes.yaml"));
 
@@ -331,9 +290,9 @@ fn main() {
     }
 
     let mut study = create_static_duo_skill_study(
-        String::from("Daimyo_Atk_Main"),
+        study_identifier,
         String::from("Optimize Daimyo for ATK with Lord Duo"),
-        50,
+        1000,
         100.0,
         create_team(
             vec![
@@ -344,7 +303,12 @@ fn main() {
         )
         .unwrap(),
         valid_skills,
-        vec!["Sword Master".into(), "Warlord".into()],
+        vec![
+            "Warlord".into(),
+            "All Natural".into(),
+            "Whirlwind Attack".into(),
+            "Power Attack".into(),
+        ],
         String::from("Daimyo-Atk_Test_Main"),
         heroes_from_builder["Daimyo-Atk_Test_Main"].clone(),
         vec![create_trial_dungeon(

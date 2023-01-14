@@ -1,4 +1,4 @@
-use crate::decimals::round_to_2;
+use crate::decimals::{round_to_2, round_to_4};
 
 use super::dungeons::Dungeon;
 use super::heroes::Team;
@@ -156,10 +156,12 @@ impl Trial {
         while self.results.len() < self.simulation_qty {
             // let timer = Instant::now();
             // print!("Running simulation iteration:  # {:#?}", self.results.len());
-            info!(
-                "\n\nRunning simulation iteration: # {}\n",
-                self.results.len()
-            );
+            if self.log_all == true {
+                info!(
+                    "\n\nRunning simulation iteration: # {}\n",
+                    self.results.len()
+                );
+            }
             let encounter = self
                 .dungeon
                 .generate_encounter_from_dungeon(&self.difficulty_settings, self.force_minibosses)
@@ -224,7 +226,7 @@ impl Trial {
             miniboss_results_length = 1
         }
 
-        let mut vec_hero_survival_rate: [Vec<u8>; 5] = Default::default();
+        let mut vec_hero_survival_rate: [Vec<u64>; 5] = Default::default();
         let mut vec_hero_avg_hp_remaining: [Vec<f64>; 5] = Default::default();
         let mut vec_hero_avg_dmg: [Vec<f64>; 5] = Default::default();
         let mut vec_hero_avg_dodges: [Vec<f64>; 5] = Default::default();
@@ -243,7 +245,7 @@ impl Trial {
             let team_crits_taken = res.get_team_crits_taken();
             for i in 0..5 {
                 let survived = team_hp_rem[i] > 0.0;
-                vec_hero_survival_rate[i].push(survived as u8);
+                vec_hero_survival_rate[i].push(survived as u64);
                 vec_hero_avg_hp_remaining[i].push(team_hp_rem[i]);
                 vec_hero_avg_dmg[i].push(team_dmg_dealt[i]);
                 vec_hero_avg_dodges[i].push((sim_rounds - (team_dodges[i] as f64)) / sim_rounds);
@@ -259,7 +261,7 @@ impl Trial {
         let hero_names: Vec<String> = all_results[0].get_team().get_team_hero_names();
         let hero_survival_rate: [f64; 5] = vec_hero_survival_rate
             .iter()
-            .map(|sr| (sr.iter().sum::<u8>() / sr.len() as u8) as f64)
+            .map(|sr| (sr.iter().sum::<u64>() / sr.len() as u64) as f64)
             .collect::<Vec<f64>>()
             .try_into()
             .unwrap();
@@ -310,35 +312,34 @@ impl Trial {
             trial_num_minibosses: miniboss_results.len(),
             success_rate: (all_results
                 .iter()
-                .map(|res| res.is_success() as u32)
-                .sum::<u32>()
-                / all_results_length as u32) as f64,
+                .map(|res| res.is_success() as u32 as f64)
+                .sum::<f64>()
+                / all_results_length as f64),
             success_rate_vs_miniboss: (miniboss_results
                 .iter()
-                .map(|res| res.is_success() as u32)
-                .sum::<u32>()
-                / miniboss_results_length as u32) as f64,
+                .map(|res| res.is_success() as u32 as f64)
+                .sum::<f64>()
+                / miniboss_results_length as f64),
             average_rounds: (all_results
                 .iter()
-                .map(|res| res.get_rounds() as u32)
-                .sum::<u32>()
-                / all_results_length as u32) as f64,
+                .map(|res| res.get_rounds() as u32 as f64)
+                .sum::<f64>()
+                / all_results_length as f64),
             avg_rounds_vs_miniboss: (miniboss_results
                 .iter()
-                .map(|res| res.get_rounds() as u32)
-                .sum::<u32>()
-                / miniboss_results_length as u32) as f64,
+                .map(|res| res.get_rounds() as u32 as f64)
+                .sum::<f64>()
+                / miniboss_results_length as f64),
             avg_encounter_hp_remaining: (all_results
                 .iter()
-                .map(|res| res.get_encounter_hp_remaining() as u32)
-                .sum::<u32>()
-                / all_results_length as u32) as f64,
+                .map(|res| res.get_encounter_hp_remaining() as f64)
+                .sum::<f64>()
+                / all_results_length as f64),
             avg_encounter_hp_remaining_vs_miniboss: (miniboss_results
                 .iter()
-                .map(|res| res.get_encounter_hp_remaining() as u32)
-                .sum::<u32>()
-                / miniboss_results_length as u32)
-                as f64,
+                .map(|res| res.get_encounter_hp_remaining() as f64)
+                .sum::<f64>()
+                / miniboss_results_length as f64),
 
             hero_names,
             hero_survival_rate,
@@ -454,8 +455,8 @@ struct TrialResultCSVRecord {
     difficulty_settings: String,
     force_minibosses: String,
     trial_num_minibosses: usize,
-    success_rate: f64,
-    success_rate_vs_miniboss: f64,
+    success_rate: String,
+    success_rate_vs_miniboss: String,
     average_rounds: f64,
     avg_rounds_vs_miniboss: f64,
     avg_encounter_hp_remaining: f64,
@@ -511,10 +512,8 @@ impl TrialResultCSVRecord {
     pub fn round_floats_for_display(&self) -> TrialResultCSVRecord {
         let mut tcr2 = self.clone();
 
-        tcr2.success_rate = round_to_2(tcr2.success_rate);
-        tcr2.success_rate_vs_miniboss = round_to_2(tcr2.success_rate_vs_miniboss);
-        tcr2.average_rounds = round_to_2(tcr2.average_rounds);
-        tcr2.avg_rounds_vs_miniboss = round_to_2(tcr2.avg_rounds_vs_miniboss);
+        tcr2.average_rounds = round_to_4(tcr2.average_rounds);
+        tcr2.avg_rounds_vs_miniboss = round_to_4(tcr2.avg_rounds_vs_miniboss);
         tcr2.avg_encounter_hp_remaining = round_to_2(tcr2.avg_encounter_hp_remaining);
         tcr2.avg_encounter_hp_remaining_vs_miniboss =
             round_to_2(tcr2.avg_encounter_hp_remaining_vs_miniboss);
@@ -602,8 +601,8 @@ fn create_trial_result_csv_record_from_trial_result(result: TrialResult) -> Tria
         difficulty_settings: format!("{:?}", new_diff_settings),
         force_minibosses: new_force_miniboss,
         trial_num_minibosses: result.trial_num_minibosses,
-        success_rate: result.success_rate,
-        success_rate_vs_miniboss: result.success_rate_vs_miniboss,
+        success_rate: f!("{:.4}", round_to_4(result.success_rate)),
+        success_rate_vs_miniboss: f!("{:.4}", round_to_4(result.success_rate_vs_miniboss)),
         average_rounds: result.average_rounds,
         avg_rounds_vs_miniboss: result.avg_rounds_vs_miniboss,
         avg_encounter_hp_remaining: result.avg_encounter_hp_remaining,

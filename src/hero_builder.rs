@@ -228,14 +228,31 @@ impl Hero {
             let grade = split_vec[1];
             if element == self.element_type {
                 match grade {
-                    "1" => element_qty += 5,
-                    "2" => element_qty += 10,
-                    "3" => element_qty += 15,
-                    "4" => element_qty += 25,
+                    "1" => {
+                        element_qty += 5;
+                        if element == blueprint.get_elemental_affinity() {
+                            element_qty += 5;
+                        }
+                    }
+                    "2" => {
+                        element_qty += 10;
+                        if element == blueprint.get_elemental_affinity() {
+                            element_qty += 5;
+                        }
+                    }
+                    "3" => {
+                        element_qty += 15;
+                        if element == blueprint.get_elemental_affinity() {
+                            element_qty += 5;
+                        }
+                    }
+                    "4" => {
+                        element_qty += 25;
+                        if element == blueprint.get_elemental_affinity() {
+                            element_qty += 10;
+                        }
+                    }
                     _ => panic!("Unknown element grade {}", grade),
-                }
-                if element == blueprint.get_elemental_affinity() {
-                    element_qty += 5;
                 }
             } else {
                 panic!("Unknown element type {}", element);
@@ -463,25 +480,57 @@ impl Hero {
             let mut bonus_item_atk_percent = 0.0f64;
             let mut bonus_item_def_percent = 0.0f64;
 
+            // log::info!(" ");
+            // log::info!("{}", self.identifier);
+            // log::info!("{}", blueprint._get_name());
+            // log::info!("bonus_item_atk_percent: {}", bonus_item_atk_percent);
+            // log::info!("bonus_item_def_percent: {}", bonus_item_def_percent);
+            // log::info!(
+            //     "bonus_item_all_stats_percent: {}",
+            //     bonus_item_all_stats_percent
+            // );
+
             // Check for bonus stats from innate skill
             bonus_item_all_stats_percent +=
                 innate_skill.get_bonus_stats_from_all_equipment_percent();
 
-            if innate_skill.get_item_types().len() > 0 {
+            // log::info!(
+            //     "Check for bonus stats from innate skill, all equipment: bonus_item_all_stats_percent: {:#?}",
+            //     bonus_item_all_stats_percent
+            // );
+
+            if innate_skill.get_item_types().len() > 0 && innate_skill.get_item_types()[0] != "" {
                 // Has bonuses associated with atleast one item type
+                // log::info!("Innate Skill: Has bonuses associated with atleast one item type. Item Types: {:?}", innate_skill.get_item_types());
                 for itype in innate_skill.get_item_types() {
+                    // log::info!(
+                    //     "blueprint.get_type: {}, itype: {}, ==?: {}",
+                    //     blueprint.get_type(),
+                    //     itype,
+                    //     blueprint.get_type() == itype
+                    // );
                     if blueprint.get_type() == itype {
                         // Have that type equipped, apply bonus(es)
                         bonus_item_atk_percent += innate_skill.get_attack_with_item_percent();
                         bonus_item_def_percent += innate_skill.get_defense_with_item_percent();
                         bonus_item_all_stats_percent +=
                             innate_skill.get_all_stats_with_item_percent();
+                        // log::info!("bonus_item_atk_percent: {}", bonus_item_atk_percent);
+                        // log::info!("bonus_item_def_percent: {}", bonus_item_def_percent);
+                        // log::info!(
+                        //     "bonus_item_all_stats_percent: {}",
+                        //     bonus_item_all_stats_percent
+                        // );
                     }
                 }
             }
 
             // Check for skills that give bonus stats to gear
             for skill_name in &self.skills {
+                // log::info!(
+                //     "Check for skills that give bonus stats to gear - skill_name: {}",
+                //     skill_name
+                // );
                 if skill_name == "" {
                     continue;
                 }
@@ -499,16 +548,31 @@ impl Hero {
                     skill_name.to_string(),
                 );
 
+                // log::info!("skill: {}", skill.get_tier_1_name());
+
                 // Get all stats bonus if applicable
                 bonus_item_all_stats_percent += skill.get_bonus_stats_from_all_equipment_percent();
+                // log::info!(
+                //     "bonus_item_all_stats_percent: {}",
+                //     bonus_item_all_stats_percent
+                // );
 
-                if skill.get_item_types().len() > 0 {
+                if skill.get_item_types().len() > 0 && skill.get_item_types()[0] != "" {
+                    // log::info!("Skill: Has bonuses associated with atleast one item type. Item Types: {:?}", skill.get_item_types());
                     // Has bonuses associated with atleast one item type
                     for itype in skill.get_item_types() {
+                        // log::info!(
+                        //     "blueprint.get_type: {}, itype: {}, ==?: {}",
+                        //     blueprint.get_type(),
+                        //     itype,
+                        //     blueprint.get_type() == itype
+                        // );
                         if blueprint.get_type() == itype {
                             // Have that type equipped, apply bonus(es)
                             bonus_item_atk_percent += skill.get_attack_with_item_percent();
                             bonus_item_def_percent += skill.get_defense_with_item_percent();
+                            // log::info!("bonus_item_atk_percent: {}", bonus_item_atk_percent);
+                            // log::info!("bonus_item_def_percent: {}", bonus_item_def_percent);
                         }
                     }
                 }
@@ -524,10 +588,19 @@ impl Hero {
                 "Legendary" => gear_quality_bonus = 3.0,
                 _ => panic!("Unknown gear_quality {}", gear_quality),
             }
+            // log::info!(
+            //     "gear_quality: {}, gear_quality_bonus: {}",
+            //     gear_quality,
+            //     gear_quality_bonus
+            // );
 
             let gear_element = &self.elements_socketed[gear_index];
             let gear_element_split = gear_element.split_whitespace().collect::<Vec<&str>>();
             let gear_element_tier = gear_element_split[1].parse::<u8>().unwrap();
+
+            // log::info!("gear_element: {}", gear_element);
+            // log::info!("gear_element_split: {:?}", gear_element_split);
+            // log::info!("gear_element_tier: {}", gear_element_tier);
 
             let mut gear_element_atk_bonus: f64;
             let mut gear_element_def_bonus: f64;
@@ -577,12 +650,22 @@ impl Hero {
                 gear_element_hp_bonus *= 1.5;
             }
 
+            // log::info!("gear_element_atk_bonus: {}", gear_element_atk_bonus);
+            // log::info!("gear_element_def_bonus: {}", gear_element_def_bonus);
+            // log::info!("gear_element_hp_bonus: {}", gear_element_hp_bonus);
+
             let gear_spirit = &self.spirits_socketed[gear_index];
             let gear_spirit_split = gear_spirit.split_whitespace().collect::<Vec<&str>>();
             let gear_spirit_name = gear_spirit_split[0];
             let gear_spirit_tier = gear_spirit_split[1];
 
             let spirit_affinity = blueprint.get_spirit_affinity();
+
+            // log::info!("gear_spirit: {}", gear_spirit);
+            // log::info!("gear_spirit_split: {:?}", gear_spirit_split);
+            // log::info!("gear_spirit_name: {}", gear_spirit_name);
+            // log::info!("gear_spirit_tier: {}", gear_spirit_tier);
+            // log::info!("spirit_affinity: {}", spirit_affinity);
 
             let mut gear_spirit_atk_bonus: f64;
             let mut gear_spirit_def_bonus: f64;
@@ -633,6 +716,10 @@ impl Hero {
                 }
                 _ => panic!("Unknown gear_spirit_tier {}", gear_spirit_tier),
             }
+
+            // log::info!("gear_spirit_atk_bonus: {}", gear_spirit_atk_bonus);
+            // log::info!("gear_spirit_def_bonus: {}", gear_spirit_def_bonus);
+            // log::info!("gear_spirit_hp_bonus: {}", gear_spirit_hp_bonus);
 
             let spirit_affinity_split: &str;
             if spirit_affinity.as_str() != "---" {
@@ -812,6 +899,36 @@ impl Hero {
                 gear_spirit_hp_bonus *= 1.5;
             }
 
+            // log::info!("gear_spirit_atk_bonus: {}", gear_spirit_atk_bonus);
+            // log::info!("gear_spirit_def_bonus: {}", gear_spirit_def_bonus);
+            // log::info!("gear_spirit_hp_bonus: {}", gear_spirit_hp_bonus);
+            // log::info!("spirit_bonus_atk_value: {}", spirit_bonus_atk_value);
+            // log::info!("spirit_bonus_atk_percent: {}", spirit_bonus_atk_percent);
+            // log::info!(
+            //     "spirit_bonus_survive_fatal_blow_chance_percent: {}",
+            //     spirit_bonus_survive_fatal_blow_chance_percent
+            // );
+            // log::info!(
+            //     "spirit_bonus_threat_rating_value: {}",
+            //     spirit_bonus_threat_rating_value
+            // );
+            // log::info!(
+            //     "spirit_bonus_hp_regen_value: {}",
+            //     spirit_bonus_hp_regen_value
+            // );
+            // log::info!("spirit_bonus_def_percent: {}", spirit_bonus_def_percent);
+            // log::info!(
+            //     "spirit_bonus_crit_chance_percent: {}",
+            //     spirit_bonus_crit_chance_percent
+            // );
+            // log::info!("spirit_bonus_hp_percent: {}", spirit_bonus_hp_percent);
+            // log::info!(
+            //     "spirit_bonus_crit_dmg_percent: {}",
+            //     spirit_bonus_crit_dmg_percent
+            // );
+            // log::info!("spirit_bonus_eva_percent: {}", spirit_bonus_eva_percent);
+            // log::info!("spirit_bonus_hp_value: {}", spirit_bonus_hp_value);
+
             let spellknight_bonus: f64;
             // Items from chests have innate elements, and official data sheet doesn't have innate element as a field, so this is the best we've got
             if blueprint.get_unlock_prerequisite().contains("Chest") {
@@ -820,6 +937,8 @@ impl Hero {
             } else {
                 spellknight_bonus = 1.0;
             }
+
+            // log::info!("spellknight_bonus: {}", spellknight_bonus);
 
             // Calculate and apply gear bonus to running totals
             let item_attack_final = ((blueprint.get_atk() * gear_quality_bonus)
@@ -846,9 +965,19 @@ impl Hero {
             equip_eva_percent += blueprint.get_eva() * (1.0 + bonus_item_all_stats_percent);
             equip_crit_chance_percent +=
                 blueprint.get_crit() * (1.0 + bonus_item_all_stats_percent);
+
+            // log::info!("item_attack_final: {}", item_attack_final);
+            // log::info!("item_defense_final: {}", item_defense_final);
+            // log::info!("item_hp_final: {}", item_hp_final);
+            // log::info!("equip_atk_value: {}", equip_atk_value);
+            // log::info!("equip_def_value: {}", equip_def_value);
+            // log::info!("equip_hp_value: {}", equip_hp_value);
+            // log::info!("equip_eva_percent: {}", equip_eva_percent);
+            // log::info!("equip_crit_chance_percent: {}", equip_crit_chance_percent);
         }
 
         // Calculate hero-wide skill bonuses
+        // log::info!("Calculate hero-wide skill bonuses");
         let mut skill_bonus_atk_percent: f64 = 0.0;
         let mut skill_bonus_atk_value: f64 = 0.0;
         let mut skill_bonus_hp_percent: f64 = 0.0;
@@ -874,6 +1003,29 @@ impl Hero {
         skill_bonus_crit_damage_percent += innate_skill.get_crit_damage_percent();
         skill_bonus_threat_rating_value += innate_skill.get_threat_rating_value();
         _skill_bonus_rest_time_percent += innate_skill.get_rest_time_percent();
+
+        // log::info!("skill_bonus_atk_percent: {}", skill_bonus_atk_percent);
+        // log::info!("skill_bonus_hp_percent: {}", skill_bonus_hp_percent);
+        // log::info!("skill_bonus_hp_value: {}", skill_bonus_hp_value);
+        // log::info!("skill_bonus_hp_regen_value: {}", skill_bonus_hp_regen_value);
+        // log::info!("skill_bonus_def_percent: {}", skill_bonus_def_percent);
+        // log::info!("skill_bonus_eva_percent: {}", skill_bonus_eva_percent);
+        // log::info!(
+        //     "skill_bonus_crit_chance_percent: {}",
+        //     skill_bonus_crit_chance_percent
+        // );
+        // log::info!(
+        //     "skill_bonus_crit_damage_percent: {}",
+        //     skill_bonus_crit_damage_percent
+        // );
+        // log::info!(
+        //     "skill_bonus_threat_rating_value: {}",
+        //     skill_bonus_threat_rating_value
+        // );
+        // log::info!(
+        //     "_skill_bonus_rest_time_percent: {}",
+        //     _skill_bonus_rest_time_percent
+        // );
 
         // Get bonuses from hero skills
         for skill_name in &self.skills {
@@ -906,12 +1058,40 @@ impl Hero {
             _skill_bonus_xp_percent_percent += skill.get_xp_percent();
             skill_bonus_survive_fatal_blow_chance_percent +=
                 skill.get_survive_fatal_blow_chance_percent();
+
+            // log::info!("skill_bonus_atk_percent: {}", skill_bonus_atk_percent);
+            // log::info!("skill_bonus_atk_value: {}", skill_bonus_atk_value);
+            // log::info!("skill_bonus_hp_percent: {}", skill_bonus_hp_percent);
+            // log::info!("skill_bonus_hp_value: {}", skill_bonus_hp_value);
+            // log::info!("skill_bonus_def_percent: {}", skill_bonus_def_percent);
+            // log::info!("skill_bonus_eva_percent: {}", skill_bonus_eva_percent);
+            // log::info!(
+            //     "skill_bonus_crit_chance_percent: {}",
+            //     skill_bonus_crit_chance_percent
+            // );
+            // log::info!(
+            //     "skill_bonus_crit_damage_percent: {}",
+            //     skill_bonus_crit_damage_percent
+            // );
+            // log::info!(
+            //     "_skill_bonus_rest_time_percent: {}",
+            //     _skill_bonus_rest_time_percent
+            // );
+            // log::info!(
+            //     "_skill_bonus_xp_percent_percent: {}",
+            //     _skill_bonus_xp_percent_percent
+            // );
+            // log::info!(
+            //     "skill_bonus_survive_fatal_blow_chance_percent: {}",
+            //     skill_bonus_survive_fatal_blow_chance_percent
+            // );
         }
 
         // Adjust threat_rating
         let final_threat_rating =
             self.threat_rating + skill_bonus_threat_rating_value + spirit_bonus_threat_rating_value;
         self.threat_rating = final_threat_rating;
+        // log::info!("final_threat_rating: {}", final_threat_rating);
 
         let mut geo_astramancer_element_qty_or_chieftain_threat_bonus: f64 = 0.0;
         match self.class.as_str() {
@@ -927,27 +1107,67 @@ impl Hero {
             }
             _ => (),
         }
+        // log::info!(
+        //     "geo_astramancer_element_qty_or_chieftain_threat_bonus: {}",
+        //     geo_astramancer_element_qty_or_chieftain_threat_bonus
+        // );
 
         // println!("--{}--", self.identifier);
         // ATK calc
         let base_atk = self.atk;
         let seeded_atk = base_atk + f64::from(self.atk_seeds * 4);
+        // log::info!(
+        //     "\nCalculate seeded_atk:\n\tbase_atk: {}\n\tf64::from(self.atk_seeds * 4): {}\n\tseeded_atk: {}",
+        //     base_atk,
+        //     f64::from(self.atk_seeds * 4),
+        //     seeded_atk,
+        // );
         let summarized_base_atk_value = seeded_atk + spirit_bonus_atk_value + skill_bonus_atk_value;
-        let summarized_atk_percent_modifier = 1.0
+        // log::info!(
+        //     "\nCalculate summarized_base_atk_value:\n\tseeded_atk: {}\n\tspirit_bonus_atk_value: {}\n\tskill_bonus_atk_value: {}\n\tsummarized_base_atk_value: {}",
+        //     seeded_atk,
+        //     spirit_bonus_atk_value,
+        //     skill_bonus_atk_value,
+        //     summarized_base_atk_value,
+        // );
+        let final_atk_mod = 1.0
             + skill_bonus_atk_percent
             + geo_astramancer_element_qty_or_chieftain_threat_bonus
             + spirit_bonus_atk_percent;
-        let modified_atk_value = summarized_base_atk_value * summarized_atk_percent_modifier;
-        let modified_atk_gear_value = equip_atk_value * summarized_atk_percent_modifier;
+        // log::info!(
+        //     "\nCalculate final_atk_mod:\n\tstarting_mod: {}\n\tskill_bonus_atk_percent: {}\n\tgeo_astramancer_element_qty_or_chieftain_threat_bonus: {}\n\tspirit_bonus_atk_percent: {}\n\tfinal_atk_mod: {}",
+        //     1.0,
+        //     skill_bonus_atk_percent,
+        //     geo_astramancer_element_qty_or_chieftain_threat_bonus,
+        //     spirit_bonus_atk_percent,
+        //     final_atk_mod,
+        // );
+        let modified_atk_value = summarized_base_atk_value * final_atk_mod;
+        // log::info!(
+        //     "\nCalculate modified_atk_value:\n\tsummarized_base_atk_value: {}\n\tfinal_atk_mod: {}\n\tmodified_atk_value: {}",
+        //     summarized_base_atk_value,
+        //     final_atk_mod,
+        //     modified_atk_value,
+        // );
+        let modified_atk_gear_value = equip_atk_value * final_atk_mod;
+        // log::info!(
+        //     "\nCalculate modified_atk_gear_value:\n\tequip_atk_value: {}\n\tfinal_atk_mod: {}\n\tmodified_atk_gear_value: {}",
+        //     equip_atk_value,
+        //     final_atk_mod,
+        //     modified_atk_gear_value,
+        // );
         let final_atk = modified_atk_value + modified_atk_gear_value;
         self.atk = final_atk;
+        // log::info!(
+        //     "\nCalculate final_atk:\n\tmodified_atk_value: {}\n\tmodified_atk_gear_value: {}\n\tfinal_atk: {}",
+        //     modified_atk_value,
+        //     modified_atk_gear_value,
+        //     final_atk,
+        // );
         // println!("final_atk: {}", final_atk);
         // ((seeded_atk + gear_spirit_bonus_atk_value + sum(skill_bonus_atk_value)) * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)) + (bonus_atk_value * (1 + ((skill_atk_percent + geo_astramancer_element_qty_or_chieftain_threat_bonus) + bonus_spirit_atk_percent)/100)))
 
-        // ATK mod calc
-        let final_atk_mod = skill_bonus_atk_percent
-            + geo_astramancer_element_qty_or_chieftain_threat_bonus
-            + spirit_bonus_atk_percent;
+        // ATK mod
         self.atk_modifier = final_atk_mod;
 
         // DEF
