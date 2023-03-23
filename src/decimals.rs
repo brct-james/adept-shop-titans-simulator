@@ -4,6 +4,11 @@ pub fn round_to_2(float64: f64) -> f64 {
 }
 
 /// Rounds a f64 to 4 decimal places, as long as the float is not near the max value
+pub fn round_to_3(float64: f64) -> f64 {
+    return (float64 * 1000.0).round() / 1000.0;
+}
+
+/// Rounds a f64 to 4 decimal places, as long as the float is not near the max value
 pub fn round_to_4(float64: f64) -> f64 {
     return (float64 * 10000.0).round() / 10000.0;
 }

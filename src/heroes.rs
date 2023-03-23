@@ -53,6 +53,10 @@ impl Team {
         return None;
     }
 
+    pub fn get_heroes(&self) -> Vec<SimHero> {
+        return self.heroes.clone();
+    }
+
     pub fn _get_hero_at_index(&self, index: usize) -> SimHero {
         return self.heroes[index].clone();
     }
@@ -407,22 +411,33 @@ impl Team {
         target_chance_heroes: Vec<f64>,
         crit_chance: f64,
         crit_chance_modifier: f64,
-    ) -> (usize, bool, bool, Vec<String>) {
+    ) -> (usize, bool, bool, Vec<String>, String) {
+        let mut panic_msg: String = String::from("");
         let mut log_queue: Vec<String> = vec![];
         let mut rng = thread_rng();
 
         let lord_present: bool;
+        let lord_alive: bool;
         let lord_index: usize;
 
         log_queue.push("Calculating Mob Attack".to_string());
         match self.get_class_index("Lord".to_string()) {
             Some(index) => {
-                lord_present = true;
-                lord_index = index;
-                log_queue.push(f!("Found Lord Alive in Team at {}", index));
+                if self.heroes[index].hp <= 0.0 {
+                    lord_present = true;
+                    lord_alive = false;
+                    lord_index = index;
+                    log_queue.push(f!("Found Lord but not Alive in Team at {}", index));
+                } else {
+                    lord_present = true;
+                    lord_alive = true;
+                    lord_index = index;
+                    log_queue.push(f!("Found Lord Alive in Team at {}", index));
+                }
             }
             _ => {
                 lord_present = false;
+                lord_alive = false;
                 lord_index = 0;
                 log_queue.push("No Lord Found Alive in Team".to_string());
             }
@@ -452,14 +467,14 @@ impl Team {
                     } else {
                         let damage = (hero.damage_taken_when_hit * aoe_damage).ceil();
                         log_queue.push(f!(
-                            "Hero {} is hit by AOE, takes damage {:.2}",
+                            "Hero {} is hit by AOE, takes damage {:.2}, new health: {:.2}. checking if Hero is sensei and didn't already lost innate last round",
                             hero.identifier,
-                            damage
+                            damage,
+                            hero.hp - damage
                         ));
                         hero.hp -= damage;
 
                         // Check if innate lost
-                        log_queue.push(f!("Checking if Hero {} is sensei and didn't already lose innate last round", hero.identifier));
                         if hero.class == "Sensei" && hero.lost_innate != round - 1 {
                             log_queue.push(f!(
                                 "Hero {} is sensei and lost innate due to taking damage",
@@ -468,6 +483,11 @@ impl Team {
                             hero.lost_innate = round;
                         }
                     }
+                } else {
+                    log_queue.push(f!(
+                        "Hero {} is already at 0 hp so not damaged by AOE",
+                        hero.identifier
+                    ));
                 }
             }
 
@@ -490,7 +510,12 @@ impl Team {
                             "Hero {} did not survive fatal blow, checking for Lord save",
                             hero.identifier
                         ));
-                        if lord_present && lord_save && hero.class != "Lord" && lord_hp > 0.0 {
+                        if lord_present
+                            && lord_alive
+                            && lord_save
+                            && hero.class != "Lord"
+                            && lord_hp > 0.0
+                        {
                             // Lord Saves
                             log_queue.push(f!("Hero {} saved by Lord", hero.identifier));
                             lord_save = false;
@@ -521,7 +546,7 @@ impl Team {
             }
 
             // Check if Lord Died while Saving
-            if lord_hp <= 0.0 {
+            if lord_hp <= 0.0 && lord_hp != self.heroes[lord_index].hp {
                 // Lord Dies in Saving
                 log_queue.push(f!("Lord {} dies while saving a hero", lord_identifier));
                 if rng.gen::<f64>() >= self.heroes[lord_index].survive_chance {
@@ -553,161 +578,178 @@ impl Team {
                     break;
                 }
             }
-            let target: usize;
             match target_opt {
-                Some(t) => target = t,
-                None => panic!("Should not be possible for targetOpt to remain None, as RNG range is [0,1) and target_chance_heroes values should sum to 1... Something is broken. target_opt: {:?} target_rng: {}, target_chance_heroes: {:?}", target_opt, target_rng, target_chance_heroes),
-            };
-            // check hit/evade
-            // let hero = &mut self.heroes[target];
-            log_queue.push(f!(
-                "Mob is targeting hero at index {}: Hero {} ",
-                target,
-                self.heroes[target].identifier
-            ));
-            if self.heroes[target].guaranteed_evade
-                || rng.gen::<f64>()
-                    < f64::min(
-                        self.heroes[target].evasion
-                            + f64::from(self.heroes[target].berserker_stage) * 0.1
-                            + self.heroes[target].ninja_evasion,
-                        self.heroes[target].evasion_cap,
-                    )
-            {
-                log_queue.push(f!(
-                    "Hero {} evades single target attack",
-                    self.heroes[target].identifier
-                ));
-                self.heroes[target].dodges += 1;
-                if self.heroes[target].class == "Danger" || self.heroes[target].class == "Acrobat" {
+                Some(target) => {
+                    // check hit/evade
+                    // let hero = &mut self.heroes[target];
                     log_queue.push(f!(
-                        "Hero {} gains guaranteed crit",
+                        "Mob is targeting hero at index {}: Hero {} ",
+                        target,
                         self.heroes[target].identifier
                     ));
-                    self.heroes[target].guaranteed_crit = true;
-                }
-            } else {
-                log_queue.push(f!(
-                    "Hero {} is hit by single target attack, checking for crit damage",
-                    self.heroes[target].identifier
-                ));
-                // Hit, check crit
-                if rng.gen::<f64>()
-                    > crit_chance * crit_chance_modifier + self.heroes[target].extreme_crit_bonus
-                {
-                    // not crit
-                    self.heroes[target].hp -= self.heroes[target].damage_taken_when_hit;
-                    log_queue.push(f!(
-                        "Hero {} is hit with a NORMAL attack, takes {:.2} damage bringing hp to {:.2}",
-                        self.heroes[target].identifier,
-                        self.heroes[target].damage_taken_when_hit,
-                        self.heroes[target].hp
-                    ));
-                } else {
-                    self.heroes[target].hp -= self.heroes[target].crit_damage_taken_when_hit;
-                    self.heroes[target].crits_taken += 1;
-                    log_queue.push(f!(
-                        "Hero {} is hit with a CRITICAL attack, takes {:.2} damage bringing hp to {:.2}",
-                        self.heroes[target].identifier,
-                        self.heroes[target].crit_damage_taken_when_hit,
-                        self.heroes[target].hp
-                    ));
-                }
-
-                if self.heroes[target].hp <= 0.0 {
-                    log_queue.push(f!(
-                        "Hero {} hp reduced to 0",
-                        self.heroes[target].identifier
-                    ));
-                    if rng.gen::<f64>() >= self.heroes[target].survive_chance {
-                        // surviving fatal blow did not activate
+                    if self.heroes[target].guaranteed_evade
+                        || rng.gen::<f64>()
+                            < f64::min(
+                                self.heroes[target].evasion
+                                    + f64::from(self.heroes[target].berserker_stage) * 0.1
+                                    + self.heroes[target].ninja_evasion,
+                                self.heroes[target].evasion_cap,
+                            )
+                    {
                         log_queue.push(f!(
-                            "Hero {} did not survive fatal blow, checking for lord save",
+                            "Hero {} evades single target attack",
                             self.heroes[target].identifier
                         ));
-                        if lord_present
-                            && lord_save
-                            && self.heroes[target].class != "Lord"
-                            && self.heroes[lord_index].hp > 0.0
+                        self.heroes[target].dodges += 1;
+                        if self.heroes[target].class == "Danger"
+                            || self.heroes[target].class == "Acrobat"
                         {
-                            // Lord Saves
                             log_queue.push(f!(
-                                "Hero {} is saved by lord",
+                                "Hero {} gains guaranteed crit",
                                 self.heroes[target].identifier
                             ));
-                            lord_save = false;
-                            self.heroes[target].hp += self.heroes[target].damage_taken_when_hit;
-                            self.heroes[lord_index].hp -=
-                                self.heroes[lord_index].damage_taken_when_hit;
-                            log_queue.push(f!(
-                                "Hero {} now has HP of {:.2}, Lord {} now has HP of {:.2}",
-                                self.heroes[target].identifier,
-                                self.heroes[target].hp,
-                                self.heroes[lord_index].identifier,
-                                self.heroes[lord_index].hp
-                            ));
-                            if self.heroes[lord_index].hp <= 0.0 {
-                                // lord dies in saving
-                                log_queue.push(f!(
-                                    "Lord {} dies while saving hero {}",
-                                    self.heroes[lord_index].identifier,
-                                    self.heroes[target].identifier
-                                ));
-                                if rng.gen::<f64>() >= self.heroes[lord_index].survive_chance {
-                                    // surviving fatal blow did not activate
-                                    log_queue.push(f!(
-                                        "Lord {} did not survive fatal blow",
-                                        self.heroes[lord_index].identifier
-                                    ));
-                                    self.heroes[lord_index].hp = 0.0;
-                                    heroes_alive -= 1;
-                                    update_target = true;
-                                } else {
-                                    // survive fatal blow
-                                    log_queue.push(f!(
-                                        "Lord {} survived fatal blow with 1 HP",
-                                        self.heroes[lord_index].identifier
-                                    ));
-                                    self.heroes[lord_index].hp = 1.0;
-                                    self.heroes[lord_index].survive_chance = 0.0;
-                                }
-                            }
-                        } else {
-                            // lord doesnt save
-                            log_queue.push(f!("Hero {} dies", self.heroes[target].identifier));
-                            self.heroes[target].hp = 0.0;
-                            heroes_alive -= 1;
-                            update_target = true;
+                            self.heroes[target].guaranteed_crit = true;
                         }
                     } else {
-                        // surviving fatal blow activated
                         log_queue.push(f!(
-                            "Hero {} survived fatal blow with 1 HP",
+                            "Hero {} is hit by single target attack, checking for crit damage",
                             self.heroes[target].identifier
                         ));
-                        self.heroes[target].hp = 1.0;
-                        self.heroes[target].survive_chance = 0.0;
+                        // Hit, check crit
+                        let was_crit: bool;
+                        if rng.gen::<f64>()
+                            > crit_chance * crit_chance_modifier
+                                + self.heroes[target].extreme_crit_bonus
+                        {
+                            // not crit
+                            was_crit = false;
+                            self.heroes[target].hp -= self.heroes[target].damage_taken_when_hit;
+                            log_queue.push(f!(
+                                "Hero {} is hit with a NORMAL attack, takes {:.2} damage bringing hp to {:.2}",
+                                self.heroes[target].identifier,
+                                self.heroes[target].damage_taken_when_hit,
+                                self.heroes[target].hp
+                            ));
+                        } else {
+                            was_crit = true;
+                            self.heroes[target].hp -=
+                                self.heroes[target].crit_damage_taken_when_hit;
+                            self.heroes[target].crits_taken += 1;
+                            log_queue.push(f!(
+                                "Hero {} is hit with a CRITICAL attack, takes {:.2} damage bringing hp to {:.2}",
+                                self.heroes[target].identifier,
+                                self.heroes[target].crit_damage_taken_when_hit,
+                                self.heroes[target].hp
+                            ));
+                        }
+
+                        if self.heroes[target].hp <= 0.0 {
+                            log_queue.push(f!(
+                                "Hero {} hp reduced to 0",
+                                self.heroes[target].identifier
+                            ));
+                            if rng.gen::<f64>() >= self.heroes[target].survive_chance {
+                                // surviving fatal blow did not activate
+                                log_queue.push(f!(
+                                    "Hero {} did not survive fatal blow, checking for lord save",
+                                    self.heroes[target].identifier
+                                ));
+                                if lord_present
+                                    && lord_alive
+                                    && lord_save
+                                    && self.heroes[target].class != "Lord"
+                                    && self.heroes[lord_index].hp > 0.0
+                                {
+                                    // Lord Saves
+                                    log_queue.push(f!(
+                                        "Hero {} is saved by lord",
+                                        self.heroes[target].identifier
+                                    ));
+                                    lord_save = false;
+                                    let damage_transfered = if was_crit {
+                                        self.heroes[target].crit_damage_taken_when_hit
+                                    } else {
+                                        self.heroes[target].damage_taken_when_hit
+                                    };
+                                    self.heroes[target].hp += damage_transfered;
+                                    self.heroes[lord_index].hp -= damage_transfered;
+                                    log_queue.push(f!(
+                                        "Hero {} now has HP of {:.2}, Lord {} now has HP of {:.2}",
+                                        self.heroes[target].identifier,
+                                        self.heroes[target].hp,
+                                        self.heroes[lord_index].identifier,
+                                        self.heroes[lord_index].hp
+                                    ));
+                                    if self.heroes[lord_index].hp <= 0.0 {
+                                        // lord dies in saving
+                                        log_queue.push(f!(
+                                            "Lord {} dies while saving hero {}",
+                                            self.heroes[lord_index].identifier,
+                                            self.heroes[target].identifier
+                                        ));
+                                        if rng.gen::<f64>()
+                                            >= self.heroes[lord_index].survive_chance
+                                        {
+                                            // surviving fatal blow did not activate
+                                            log_queue.push(f!(
+                                                "Lord {} did not survive fatal blow",
+                                                self.heroes[lord_index].identifier
+                                            ));
+                                            self.heroes[lord_index].hp = 0.0;
+                                            heroes_alive -= 1;
+                                            update_target = true;
+                                        } else {
+                                            // survive fatal blow
+                                            log_queue.push(f!(
+                                                "Lord {} survived fatal blow with 1 HP",
+                                                self.heroes[lord_index].identifier
+                                            ));
+                                            self.heroes[lord_index].hp = 1.0;
+                                            self.heroes[lord_index].survive_chance = 0.0;
+                                        }
+                                    }
+                                } else {
+                                    // lord doesnt save
+                                    log_queue
+                                        .push(f!("Hero {} dies", self.heroes[target].identifier));
+                                    self.heroes[target].hp = 0.0;
+                                    heroes_alive -= 1;
+                                    update_target = true;
+                                }
+                            } else {
+                                // surviving fatal blow activated
+                                log_queue.push(f!(
+                                    "Hero {} survived fatal blow with 1 HP",
+                                    self.heroes[target].identifier
+                                ));
+                                self.heroes[target].hp = 1.0;
+                                self.heroes[target].survive_chance = 0.0;
+                            }
+                        }
+
+                        // check sensei lost innate
+                        log_queue.push(f!(
+                            "Checking if Hero {} is sensei and didn't already lose innate last round",
+                            self.heroes[target].identifier
+                        ));
+                        if self.heroes[target].class == "Sensei"
+                            && self.heroes[target].lost_innate != round - 1
+                        {
+                            log_queue.push(f!(
+                                "Hero {} is sensei and lost innate due to taking damage",
+                                self.heroes[target].identifier
+                            ));
+                            self.heroes[target].lost_innate = round;
+                        }
                     }
                 }
-
-                // check sensei lost innate
-                log_queue.push(f!(
-                    "Checking if Hero {} is sensei and didn't already lose innate last round",
-                    self.heroes[target].identifier
-                ));
-                if self.heroes[target].class == "Sensei"
-                    && self.heroes[target].lost_innate != round - 1
-                {
-                    log_queue.push(f!(
-                        "Hero {} is sensei and lost innate due to taking damage",
-                        self.heroes[target].identifier
-                    ));
-                    self.heroes[target].lost_innate = round;
+                None => {
+                    panic_msg = f!("Should not be possible for targetOpt to remain None, as RNG range is [0,1) and target_chance_heroes values should sum to 1... Something is broken. target_opt: {:?} target_rng: {}, target_chance_heroes: {:?}, heroes_alive: {}, heroes: {:#?}", target_opt, target_rng, target_chance_heroes, heroes_alive, self.heroes);
                 }
-            }
+            };
         }
 
-        return (heroes_alive, lord_save, update_target, log_queue);
+        return (heroes_alive, lord_save, update_target, log_queue, panic_msg);
     }
 
     pub fn calculate_hemma_drain(

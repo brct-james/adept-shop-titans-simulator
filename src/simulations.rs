@@ -118,7 +118,7 @@ impl Simulation {
             // Mob AOE
             let (aoe_chance, aoe_damage) = self.encounter.get_aoe_info();
             let (crit_chance, crit_chance_modifier) = self.encounter.get_crit_info();
-            let (temp1, temp2, temp3, temp4) = self.team.calculate_mob_attack(
+            let (temp1, temp2, temp3, temp4, panic_string) = self.team.calculate_mob_attack(
                 aoe_chance,
                 aoe_damage,
                 heroes_alive,
@@ -129,6 +129,13 @@ impl Simulation {
                 crit_chance,
                 crit_chance_modifier,
             );
+            if panic_string.len() > 0 {
+                for item in log_queue {
+                    info!("{}", item);
+                }
+                info!("PANICKING: {}", panic_string);
+                panic!("{}", panic_string);
+            }
             heroes_alive = temp1;
             lord_save = temp2;
             update_target = temp3;
@@ -193,8 +200,9 @@ impl Simulation {
 
             // Check lost
             if heroes_alive == 0 {
-                cont_fight = false;
+                // cont_fight = false; // Break instead
                 log_queue.push("No heroes remain alive".to_string());
+                break;
             }
 
             // Calculate polonia loot

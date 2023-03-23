@@ -67,6 +67,8 @@ pub fn create_static_duo_skill_study(
 impl Runnable for StaticDuoSkillStudy {
     /// Handle running trials for the study
     fn run(&mut self) {
+        info!("Start Study: {}", self.study.identifier);
+
         self.study.status = StudyStatus::Running;
 
         let pb = ProgressBar::new(self._count_skill_variations_total().try_into().unwrap());

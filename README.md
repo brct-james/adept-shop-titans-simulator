@@ -1,5 +1,76 @@
 # shop-titans-simulator
+
 A rust-based simulator for the game Shop Titans
+
+## Instructions for Populating study_docket.csv
+
+- `Completed`: Whether the study has been completed or not
+  - **NOTE:** Set to 'false' or the entry will be skipped
+  - If you want to re-run a docket, simply find all 'true' and replace with 'false' before starting program again
+- `Identifier`: The unique identifier for the study
+  - If not unique, multiple studies may have their results combined!
+    - While typically you would not want to combine the results, this may be helpful behavior for things like comparing variance
+  - Example: 'Daimyo_Atk_Main_Duo'
+- `Description`: Describes the study - not used by the script, for your reference only. Example: 'Optimize Daimyo for ATK with Lord Duo'
+- `Type`: Selects the type of study to run in the system. Must match exactly one of the options below:
+  - `StaticDuoSkillStudy`: Expects two heroes in the team, and will vary the skills of the **first** hero. Outputs a duo_skillz_results.csv as well as the normal trial_results.csv
+- `Skill Name Format`: Selects the format used for skill names in this config. Must match exactly one of the options below:
+  - `Abbreviated`: If you are using the 3-letter abbreviation for the skills (defined in data_sheets/skill_abbreviation_map.csv)
+  - `FullTierOne`: If you are using the full tier one name for the skills
+  - `FullAnyTier`: If you are using the full name of any tier for the skills
+    - **NOTE:** It is recommended to use the other options for your own clarity. As with both other formats, the system will look up the tier one name of the skills and scale them to the appropriate tier based on the number of elements on the hero regardless of which tier name you use here.
+- `Simulation Qty`: How many simulations to run _per skillset_. 1 minimum, 50000 maximum
+  - **NOTE::** Runtime can quickly become excessive with higher sim quantities, especially if not excluding many skills and/or not setting many static preset skills. In testing, 1000 is a good minimum that maintains consistency, and 10000 can be appropriate for refining the upper end skillsets. It is not recommended to use 25000+ for your initial round of testing.
+- `Runoff Scoring Threshold`: **Unimplemented**
+- `Team Hero Identifiers`: The semi-colon-separated list of hero identifiers to include in the team
+  - **NOTE:** See the notes on the `Type` column above. Some studies expect hero identifiers in a specific order and will otherwise give unexpected results
+  - Whitespace around each list item is trimmed
+  - Hero identifiers are looked up from entries in input/hero_builder.csv and must match exactly
+  - Example: "Daimyo-Atk_Test_Main; Lord_Control"
+- `Team Booster`: What booster to apply to the team. Must exactly match from the options below:
+  - `None`
+  - `Power Booster`
+  - `Super Power Booster`
+  - `Mega Power Booster`
+- `Static Preset Skills`: The semi-colon-separated list of skill names following your specified `Skill Name Format` to be used as static (unchanging) for the hero being varied upon. Up to 4 may be specified, one for each skill slot.
+  - **NOTE:** May be left empty to have no static skills, varying all 4 skill slots
+  - **NOTE:** Each non-static skillslot exponentially increases the number of variations that must be trialed. Use caution when leaving this blank if you are also using high simulation quantity and not excluding any skills
+  - Whitespace is trimmed around each item
+  - Example Using FullTierOne Format: "Warlord; All Natural;Whirlwind Attack ; Power Attack"
+  - Example Using Abbreviated Format: "War;All;Whi;Pow"
+- `Dungeon Specifications`: The pipe-separated ('|') list of dungeon-specs to include. Each dungeon-spec is defined as follows (colon-separated):
+  - **NOTE:** Currently multiple dungeons are not supported - only the first dungeon in the list is used. This is the case for static*duo_skill_study, which is the only implemented study type. In the future, this and other study types \_may* support automatic retrialing of the top X% of skillsets on a harder dungeon from this list. For now, just use the single-dungeon configuration.
+  - `[Dungeon Identifier]:[Difficulty]:[Miniboss Setting]`
+    - `Dungeon Identifier`: Dungeon identifiers must match exactly one specified in input/dungeons.yaml. Included by default are the following Dungeons:
+      - `Howling Woods`
+      - `Aurora Caves`
+      - `Whispering Bog`
+      - `Barren Wastes`
+      - `Sun God's Tomb`
+      - `Chronos Ruins`
+      - `Haunted Castle`
+      - `Sunken Temple`
+      - `Bleakspire Peak`
+      - `Cinderlake Volcano`
+    - `Difficulty`: Difficulty must match exactly one specified below:
+      - `Easy`
+      - `Medium`
+      - `Hard`
+      - `Extreme`
+      - `Boss Easy`
+      - `Boss Medium`
+      - `Boss Hard`
+      - `Boss Extreme`
+    - `Miniboss Setting`: Must be one of the following (ignored for Boss difficulties)
+      - `No Minibosses`
+      - `Only Minibosses`
+      - `Random Minibosses`: 50% chance of spawning a miniboss. Included for legacy reasons, I generally recommend running two simulations one with only minibosses and one with no minibosses
+  - If you only wish to use one dungeon, follow this example: 'Bleakspire Peak: Boss Hard : No Minibosses'
+  - For multiple dungeons, follow this example: 'Bleakspire Peak:Boss Hard:No Minibosses|Bleakspire Peak:Hard :Only Minibosses'
+- `Automatic Rank Difficulty Optimization`: Unimplemented
+- `Excluded Skills`: The semi-colon-separated list of skill names following your specified `Skill Name Format` that will be excluded from the list of skills that are to be varied upon.
+  - Commonly used to remove skills with no combat effect (like +XP) to speed up processing
+  - Can be left blank to exclude no skills
 
 ## Update Notes:
 
@@ -32,24 +103,23 @@ A rust-based simulator for the game Shop Titans
 
 ```md
 So do you think this methodology would be valid:
+
 1. When starting the simulator you give a list of equipment sets. The simulator uses the weapon in the 1st set (or maybe I add a column called 'isPrimarySet') for the entire proceeding round(s) of simulations.
 2. For the final round of simulations (50k+), the simulator will take the builds above 70 score, and if they have a weapon skill, generate additional combos using the weapons from the other skill sets.
-[11:52 AM]
-* which would obviously replace the skill(s) with the appropriate alternative i.e. wand master to sword master (edited)
-[11:53 AM]
-So you'd still end up testing all of those skills, but you don't waste time generating 4x the total simulations for combos that are dead ends
-[11:53 AM]
-Or is there something I'm overlooking there
+   [11:52 AM]
+
+- which would obviously replace the skill(s) with the appropriate alternative i.e. wand master to sword master (edited)
+  [11:53 AM]
+  So you'd still end up testing all of those skills, but you don't waste time generating 4x the total simulations for combos that are dead ends
+  [11:53 AM]
+  Or is there something I'm overlooking there
 ```
 
 3. Maybe develop an easy prefilter and postfilter system, eh? Something that could filter out all specified skills before study creation, and then another that is used during trials to filter out combos conditionally? Also need to save the specific filter sets and/or the skills that were actually used with the results for later display on a webpage. Perhaps postfilter for restricting skills by SLOT so more easy to build cores for duos?
 4. System for generating 'Rounds' of Trials, such that rounds vary by the number of simulations per trial and by how the combinations are created (e.g. initially source deterministically from the csv but later rounds are based on the best combos of the previous round - perhaps in batches for resuming)
 5. Make sure hero_builder.csv identifier has uniqueness enforced
 
-Note: These might be specific to SingleHeroSkillStudy so may not be problematic afterall
-6. Studies appear to have a preset skills list, rather than using the hero_builder from the team to fill in blank skills
-7. Studies appear to take an entire dungeon and not allow customizing the difficulty or minibosses for example.
-8. Studies only take one subject hero, problematically
+Note: These might be specific to SingleHeroSkillStudy so may not be problematic afterall 6. Studies appear to have a preset skills list, rather than using the hero_builder from the team to fill in blank skills 7. Studies appear to take an entire dungeon and not allow customizing the difficulty or minibosses for example. 8. Studies only take one subject hero, problematically
 
 9. A translator to select a dungeon from "Bleakspire Peaks Boss Hard"
 
@@ -83,7 +153,7 @@ Note: These might be specific to SingleHeroSkillStudy so may not be problematic 
 - - New Blueprint Lines: Meals & Desserts
 - - Fresh Spirit (10% rest time)
 - - Hero classes can now learn the mastery skill of any weapon they can use, including the gold ones (might already be an assumption in the code?)
-- - 
+- -
 
 ### Todo:
 
@@ -103,19 +173,19 @@ Note: These might be specific to SingleHeroSkillStudy so may not be problematic 
 
 8. When importing skills, ensure skill_tier == 1 if tier_1_name == skill_name, that there are only 4 entries per tier_1_name variant, etc.
 
-10. Ensure class bonuses are applied correctly in sim: Chieftain threat -> attack mod, mercenary + effect from champ skills, lord protect, samurai/daimyo auto evade & first hit crit ignoring element barriers, berserker/jarl bonuses at hp thresholds, trickster polonia stuff, conq consecutive crits, wanderer max eva, ninja/sensei bonuses till damaged and recovery, dancer/acrobat guaranteed crits, cleric autosurvive, spellblade/knight use any element but 30% power against barriers, geo/astramancer attack per point in any element
+9. Ensure class bonuses are applied correctly in sim: Chieftain threat -> attack mod, mercenary + effect from champ skills, lord protect, samurai/daimyo auto evade & first hit crit ignoring element barriers, berserker/jarl bonuses at hp thresholds, trickster polonia stuff, conq consecutive crits, wanderer max eva, ninja/sensei bonuses till damaged and recovery, dancer/acrobat guaranteed crits, cleric autosurvive, spellblade/knight use any element but 30% power against barriers, geo/astramancer attack per point in any element
 
-11. Script should be able to handle testing variants of heroes as well (e.g. with different equips) with the same easy configuration steps
+10. Script should be able to handle testing variants of heroes as well (e.g. with different equips) with the same easy configuration steps
 
-12. Ideally some kind of resume after crash functionality could be nice particularly for larger trialsets
+11. Ideally some kind of resume after crash functionality could be nice particularly for larger trialsets
 
-13. Need a way to lock skills or gear from being permuted - so for example can test bow skill line vs wand skill line
+12. Need a way to lock skills or gear from being permuted - so for example can test bow skill line vs wand skill line
 
-14. Additionally, auto-combinations should exclude skills that dont match the equipped gear - if there is no dagger equipped then dagger master should be skipped
+13. Additionally, auto-combinations should exclude skills that dont match the equipped gear - if there is no dagger equipped then dagger master should be skipped
 
-15. Perhaps it would be good to have a way to restrict what skills/equipment is available - for example restricting to T10 gear and below or removing a set of X skills for some reason. Goes hand in hand with locking stuff I think
+14. Perhaps it would be good to have a way to restrict what skills/equipment is available - for example restricting to T10 gear and below or removing a set of X skills for some reason. Goes hand in hand with locking stuff I think
 
-16. When it comes to ranking builds, think of a way to weight the order of the skills in the build if there are empty slots remaining (because if epics are in slots 1-2 that is better for rolling than in 2-3 for example)
+15. When it comes to ranking builds, think of a way to weight the order of the skills in the build if there are empty slots remaining (because if epics are in slots 1-2 that is better for rolling than in 2-3 for example)
 
 ### Notes:
 

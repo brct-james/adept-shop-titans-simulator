@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::decimals::{_round_array_of_len_4_to_2, round_to_2};
+use crate::dockets::{Docket, DocketStudy};
 use crate::equipment::{Blueprint, ElementType};
 use crate::hero_builder::{create_hero, Hero, HeroClass};
 use crate::skills::{HeroSkill, InnateSkill};
@@ -141,7 +142,7 @@ pub fn create_sim_hero_input(
     };
 }
 
-pub fn load_sim_heroes_from_csv(path: String) -> Vec<SimHero> {
+pub fn _load_sim_heroes_from_csv(path: String) -> Vec<SimHero> {
     let mut heroes: Vec<SimHero> = vec![];
     let mut reader = csv::Reader::from_path(path).unwrap();
     for result in reader.deserialize() {
@@ -515,13 +516,6 @@ pub fn create_hero_input(
     };
 }
 
-/// Defines SkillAbbreviationMap format for deserialization from CSV
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct SkillAbbreviationMapInput {
-    skill: String,
-    abbreviation: String,
-}
-
 pub fn load_heroes_from_csv(
     path: String,
     bp_map: HashMap<String, Blueprint>,
@@ -595,18 +589,6 @@ pub fn load_heroes_as_sim_heroes_from_csv(
     return heroes;
 }
 
-pub fn load_skill_abbreviation_map(path: String) -> HashMap<String, String> {
-    let mut abbr_map: HashMap<String, String> = Default::default();
-    let mut reader = csv::Reader::from_path(path).unwrap();
-    for result in reader.deserialize() {
-        let abbr: SkillAbbreviationMapInput = result.unwrap();
-        let skill = abbr.skill.to_string().split(" (").collect::<Vec<&str>>()[0].to_string(); // Split skill on " (" to get rid of the descriptive stuff and only include the name
-        let abbreviation = abbr.abbreviation.to_string();
-        abbr_map.insert(skill, abbreviation);
-    }
-    return abbr_map;
-}
-
 pub fn _save_heroes_to_csv(
     path: String,
     heroes: HashMap<String, Hero>,
@@ -665,5 +647,68 @@ pub fn _save_hero_classes_to_yaml(
     let ordered: BTreeMap<_, _> = hashmap.iter().collect();
     serde_yaml::to_writer(writer, &ordered).unwrap();
 
+    return Ok(());
+}
+
+/// Defines SkillAbbreviationMap format for deserialization from CSV
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct SkillAbbreviationMapInput {
+    skill: String,
+    abbreviation: String,
+}
+
+pub fn load_skill_abbreviation_map(
+    path: String,
+) -> (HashMap<String, String>, HashMap<String, String>) {
+    let mut abbr_map: HashMap<String, String> = Default::default();
+    let mut opposite_map: HashMap<String, String> = Default::default();
+    let mut reader = csv::Reader::from_path(path).unwrap();
+    for result in reader.deserialize() {
+        let abbr: SkillAbbreviationMapInput = result.unwrap();
+        let skill = abbr.skill.to_string().split(" (").collect::<Vec<&str>>()[0].to_string(); // Split skill on " (" to get rid of the descriptive stuff and only include the name
+        let abbreviation = abbr.abbreviation.to_string();
+        abbr_map.insert(skill.to_string(), abbreviation.to_string());
+        opposite_map.insert(abbreviation, skill);
+    }
+    return (abbr_map, opposite_map);
+}
+
+pub fn load_study_docket(path: &String) -> Docket {
+    let mut docket: Docket = Default::default();
+    docket.set_path(path.to_string());
+    let reader = std::fs::OpenOptions::new().read(true).open(path).unwrap();
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+    let mut result_index: usize = 0;
+    for result in rdr.deserialize() {
+        result_index += 1;
+        let input: DocketStudy = result.unwrap();
+        if input.is_valid(result_index) {
+            docket.add_study(input);
+        }
+    }
+    return docket;
+}
+
+pub fn save_study_docket(path: &String, docket: &Docket) -> Result<(), std::io::Error> {
+    let writer = std::fs::OpenOptions::new()
+        .write(true)
+        .create(false)
+        .append(false)
+        .truncate(true)
+        .open(path)
+        .unwrap();
+
+    let mut wtr = csv::WriterBuilder::new()
+        .has_headers(true)
+        .from_writer(writer);
+
+    for study_settings in docket.get_studies() {
+        wtr.serialize(study_settings)?;
+    }
+
+    wtr.flush()?;
     return Ok(());
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::decimals::{round_to_2, round_to_4};
+use crate::decimals::{round_to_2, round_to_3, round_to_4};
 
 use super::dungeons::Dungeon;
 use super::heroes::Team;
@@ -737,7 +737,7 @@ struct PeeteeDuoSkillzTrialResultCSVRecord {
     def_mod: String,     // Not used
     exp_atk: String,     // Not Used
     quest_success_rate_percent: String,
-    avg_rounds: f64,
+    avg_rounds: String,
     target_hero_survival_rate: String,
     target_hero_avg_hp_remaining: f64,
     target_hero_avg_dmg: f64,
@@ -758,7 +758,6 @@ impl PeeteeDuoSkillzTrialResultCSVRecord {
     pub fn round_floats_for_display(&self) -> PeeteeDuoSkillzTrialResultCSVRecord {
         let mut tcr2 = self.clone();
 
-        tcr2.avg_rounds = round_to_4(tcr2.avg_rounds);
         tcr2.target_hero_avg_hp_remaining = round_to_2(tcr2.target_hero_avg_hp_remaining);
         tcr2.target_hero_avg_dmg = round_to_2(tcr2.target_hero_avg_dmg);
 
@@ -830,12 +829,12 @@ fn create_peetee_duoskillz_trial_result_csv_record_from_trial_result(
         attack_mod: String::from(""),        // Not used
         def_mod: String::from(""),           // Not used
         exp_atk: String::from(""),           // Not Used
-        quest_success_rate_percent: f!("{:.4}", round_to_4(result.success_rate)),
-        avg_rounds: result.average_rounds,
-        target_hero_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[0])),
+        quest_success_rate_percent: f!("{:.4}", round_to_3(result.success_rate)),
+        avg_rounds: f!("{:.4}", round_to_4(result.average_rounds * 100.0)),
+        target_hero_survival_rate: f!("{:.4}", round_to_3(result.hero_survival_rate[0] * 100.0)),
         target_hero_avg_hp_remaining: result.hero_avg_hp_remaining[0],
         target_hero_avg_dmg: result.hero_avg_dmg[0],
-        control_hero_survival_rate: f!("{:.4}", round_to_4(result.hero_survival_rate[1])),
+        control_hero_survival_rate: f!("{:.4}", round_to_3(result.hero_survival_rate[1] * 100.0)),
 
         blank_column: String::from(""),
 

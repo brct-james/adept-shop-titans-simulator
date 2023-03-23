@@ -1,3 +1,0 @@
-identifier,class,level,rank,innate_tier,hp,hp_regen,attack,defense,threat,critical_chance,critical_multiplier,evasion,survive_fatal_blow_chance,element_qty,element_type,armadillo_qty,lizard_qty,shark_qty,dinosaur_qty,mundra_qty,attack_modifier,defense_modifier
-Akana,Lord,26,3,3,854.8,0.0,840.0,7411.56,150,0.05,2.0,0.05,0.0,90,Light,0,0,0,0,0,0.0,0.6
-Tammy,Arch Druid,35,6,3,628.98,0.0,17481.54,2869.65,10,0.07,4.0,0.0,0.0,100,Earth,0,0,1,0,0,3.42,3.3

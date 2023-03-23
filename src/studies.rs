@@ -60,7 +60,11 @@ pub struct HeroBuilderInformation {
     pub bp_map: HashMap<String, Blueprint>,
     pub hero_classes: HashMap<String, HeroClass>,
     pub hero_skill_tier_1_name_map: HashMap<String, String>,
+    pub hero_skill_any_tier_to_tier_1_name_map: HashMap<String, String>,
+    pub hero_skill_abbreviation_map: HashMap<String, String>,
+    pub hero_abbreviation_skill_map: HashMap<String, String>,
     pub hero_skill_map: HashMap<String, HeroSkill>,
     pub class_innate_skill_names_map: HashMap<String, String>,
+    pub innate_skill_any_tier_to_tier_1_name_nap: HashMap<String, String>,
     pub innate_skill_map: HashMap<String, InnateSkill>,
 }
