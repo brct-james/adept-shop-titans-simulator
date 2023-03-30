@@ -106,6 +106,14 @@ impl HeroSkill {
     pub fn get_item_types(&self) -> Vec<String> {
         return self.item_types.clone();
     }
+
+    pub fn get_incompatible_with(&self) -> String {
+        return self.incompatible_with_t1_name.clone();
+    }
+
+    pub fn get_classes_allowed(&self) -> Vec<String> {
+        return self.classes_allowed.clone();
+    }
 }
 
 pub fn create_hero_skill(

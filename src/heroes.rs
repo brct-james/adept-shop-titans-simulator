@@ -1316,6 +1316,10 @@ pub struct SimHero {
 }
 
 impl SimHero {
+    pub fn get_class(&self) -> String {
+        return self.class.to_string();
+    }
+
     pub fn get_identifier(&self) -> String {
         return self.identifier.to_string();
     }

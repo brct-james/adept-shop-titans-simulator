@@ -69,3 +69,32 @@ pub struct HeroBuilderInformation {
     pub innate_skill_any_tier_to_tier_1_name_nap: HashMap<String, String>,
     pub innate_skill_map: HashMap<String, InnateSkill>,
 }
+
+impl HeroBuilderInformation {
+    pub fn get_incompatible_skills(&self, skillset: &Vec<String>) -> Vec<String> {
+        let mut res: Vec<String> = Default::default();
+
+        for skill in skillset {
+            let hs_opt = self.hero_skill_map.get(skill);
+            match hs_opt {
+                Some(hskill) => res.push(hskill.get_incompatible_with()),
+                None => (),
+            }
+        }
+
+        return res;
+    }
+
+    pub fn get_skills_incompatible_with_hero(&self, hero_class: String) -> Vec<String> {
+        let mut res: Vec<String> = Default::default();
+
+        for (identifier, hs) in &self.hero_skill_map {
+            let allowed = hs.get_classes_allowed();
+            if allowed.contains(&hero_class) {
+                res.push(identifier.to_string());
+            }
+        }
+
+        return res;
+    }
+}

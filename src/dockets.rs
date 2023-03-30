@@ -244,6 +244,7 @@ impl Docket {
                 &docket_study,
                 &loaded_valid_skills,
                 &loaded_hero_builder_information,
+                &team_heroes,
             );
             let valid_skills: Vec<String>;
             match parse_valid_skills_option {
@@ -441,8 +442,9 @@ fn parse_valid_skills(
     docket_study: &DocketStudy,
     loaded_valid_skills: &Vec<String>,
     loaded_hero_builder_information: &HeroBuilderInformation,
+    team_heroes: &Vec<SimHero>,
 ) -> Option<Vec<String>> {
-    let translation_option = translate_skillset_based_on_skill_name_format(
+    let translated_excluded_skills_option = translate_skillset_based_on_skill_name_format(
         &docket_study.skill_name_format,
         docket_study
             .excluded_skills
@@ -453,17 +455,53 @@ fn parse_valid_skills(
     );
 
     let translated_excluded_skills: Vec<String>;
-    match translation_option {
+    match translated_excluded_skills_option {
         Some(translated_skills) => translated_excluded_skills = translated_skills,
         None => return None,
     }
+
+    let translated_preset_skills_option = translate_skillset_based_on_skill_name_format(
+        &docket_study.skill_name_format,
+        docket_study
+            .preset_skills
+            .split(";")
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>(),
+        loaded_hero_builder_information,
+    );
+
+    let translated_preset_skills: Vec<String>;
+    match translated_preset_skills_option {
+        Some(translated_skills) => translated_preset_skills = translated_skills,
+        None => return None,
+    }
+
+    let incompatible_skills =
+        loaded_hero_builder_information.get_incompatible_skills(&translated_preset_skills);
+
+    let hero_class = team_heroes[0].get_class();
+    let skills_incompatible_with_hero_class =
+        loaded_hero_builder_information.get_skills_incompatible_with_hero(hero_class);
+
     let valid_skillset: HashSet<String> = HashSet::from_iter(loaded_valid_skills.iter().cloned());
     let excluded_skillset: HashSet<String> = HashSet::from_iter(translated_excluded_skills);
-    let difference: Vec<String> = valid_skillset
+    let incompatible_skillset: HashSet<String> = HashSet::from_iter(incompatible_skills);
+    let hero_incompatible_skillset: HashSet<String> =
+        HashSet::from_iter(skills_incompatible_with_hero_class);
+    let preset_skillset: HashSet<String> =
+        HashSet::from_iter(translated_preset_skills.iter().cloned());
+
+    let diff_1: HashSet<String> = valid_skillset
         .difference(&excluded_skillset)
         .cloned()
         .collect();
-    return Some(difference);
+    let diff_2: HashSet<String> = diff_1.difference(&preset_skillset).cloned().collect();
+    let diff_3: HashSet<String> = diff_2.difference(&incompatible_skillset).cloned().collect();
+    let diff_4: Vec<String> = diff_3
+        .difference(&hero_incompatible_skillset)
+        .cloned()
+        .collect();
+    return Some(diff_4);
 }
 
 fn translate_skillset_based_on_skill_name_format(
