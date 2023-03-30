@@ -1,6 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
+
+use rayon::prelude::*;
 
 use crate::dungeons::create_trial_dungeon;
 use crate::dungeons::{Dungeon, TrialDungeon};
@@ -182,26 +185,33 @@ impl Docket {
         loaded_hero_builder_information: HeroBuilderInformation,
     ) {
         println!("Commencing Docket");
-        let mut docket_index: usize = 0;
         let num_dockets: usize = self.get_num_studies();
-        let mut docket_completion_tracker = self.clone();
-        for docket_study in self.studies.iter_mut() {
-            docket_index += 1;
-            println!(
-                "Docket Study '{}' [{}]: {} of {}: {}",
-                docket_study.identifier,
-                docket_study.type_,
-                docket_index,
-                num_dockets,
-                if docket_study.completed {
-                    "Skipping (Completed)"
-                } else {
-                    "Starting"
-                }
-            );
+        let m = MultiProgress::new();
+        let m_sty = ProgressStyle::with_template("{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {human_pos}/{len} ({eta_precise})")
+        .unwrap()
+        .progress_chars("#>-");
+
+        let pb = m.add(ProgressBar::new(num_dockets.try_into().unwrap()));
+        pb.set_style(m_sty.clone());
+        pb.set_message("DOCKET OVERALL PROGRESS");
+        pb.set_position(0);
+
+        self.studies.par_iter_mut().for_each(|docket_study| {
+            // println!(
+            //     "Docket Study '{}' [{}]: {} of {}: {}",
+            //     docket_study.identifier,
+            //     docket_study.type_,
+            //     docket_index,
+            //     num_dockets,
+            //     if docket_study.completed {
+            //         "Skipping (Completed)"
+            //     } else {
+            //         "Starting"
+            //     }
+            // );
             // Skip completed studies
             if docket_study.completed == true {
-                continue;
+                return;
             }
 
             // Parse Team
@@ -211,11 +221,11 @@ impl Docket {
                 Some(parsed_team) => team = parsed_team,
                 None => {
                     println!("\tFailed to Parse Team: Skipping to Next Study");
-                    continue;
+                    return;
                 }
             }
             let team_heroes = team.get_heroes();
-            println!("\tParsed Team");
+            // println!("\tParsed Team");
 
             // Parse Dungeons
             let parse_dungeons_option = parse_dungeons(&docket_study, &loaded_dungeons);
@@ -224,10 +234,10 @@ impl Docket {
                 Some(parsed_dungeon) => dungeons = parsed_dungeon,
                 None => {
                     println!("\tFailed to Parse Dungeons: Skipping to Next Study");
-                    continue;
+                    return;
                 }
             }
-            println!("\tParsed Dungeons");
+            // println!("\tParsed Dungeons");
 
             // Parse Excluded/Valid Skills
             let parse_valid_skills_option = parse_valid_skills(
@@ -240,10 +250,10 @@ impl Docket {
                 Some(parsed_vs) => valid_skills = parsed_vs,
                 None => {
                     println!("\tFailed to Parse Excluded Skills (Did not conform to expected format): Skipping to Next Study");
-                    continue;
+                    return;
                 }
             }
-            println!("\tParsed Valid/Excluded Skills");
+            // println!("\tParsed Valid/Excluded Skills");
 
             // Parse Static/Preset Skills
             let mut preset_skills: Vec<String> = Default::default();
@@ -265,10 +275,10 @@ impl Docket {
                 Some(parsed_static_skills) => static_skills = parsed_static_skills,
                 None => {
                     println!("\tFailed to Parse Static/Preset Skills (Did not conform to expected format): Skipping to Next Study");
-                    continue;
+                    return;
                 }
             }
-            println!("\tParsed Preset Skills");
+            // println!("\tParsed Preset Skills");
 
             // Determine correct create function based on study type
             match docket_study.type_ {
@@ -291,23 +301,28 @@ impl Docket {
                             .clone(),
                     );
 
-                    println!("\tCreated Study (StaticDuoSkillStudy)");
+                    // println!("\tCreated Study (StaticDuoSkillStudy)");
 
-                    println!(
-                        "\tSkill Variations Remaining to Test: {}",
-                        study.count_skill_variations_remaining()
-                    );
+                    // println!(
+                    //     "\tSkill Variations Remaining to Test: {}",
+                    //     study.count_skill_variations_remaining()
+                    // );
 
-                    study.run();
+                    study.run(&m, &m_sty);
 
-                    docket_completion_tracker.studies[docket_index - 1].completed = true;
+                    // docket_completion_tracker.studies[docket_index - 1].completed = true;
+
+                    docket_study.completed = true;
 
                     println!("\n\tStudy Completed");
+                    pb.inc(1);
                 }
             }
             println!("Docket Study Completed");
-            save_study_docket(&self.path, &docket_completion_tracker).unwrap();
-        }
+            // TODO: Reimplement save_study_docket during execution...
+            // save_study_docket(&self.path, &self).unwrap();
+        });
+        save_study_docket(&self.path, &self).unwrap();
         println!("Docket Completed");
     }
 }

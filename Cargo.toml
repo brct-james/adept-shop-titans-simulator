@@ -17,3 +17,4 @@ strum = { version = "0.24", features = ["derive"] }
 serde_yaml = "0.9.11"
 itertools = "0.10.4"
 indicatif = "0.17.2"
+rayon = "1.7.0"

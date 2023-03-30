@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use log::info;
 
 use crate::{
@@ -66,15 +66,33 @@ pub fn create_static_duo_skill_study(
 
 impl Runnable for StaticDuoSkillStudy {
     /// Handle running trials for the study
-    fn run(&mut self) {
+    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle) {
         info!("Start Study: {}", self.study.identifier);
 
         self.study.status = StudyStatus::Running;
 
-        let pb = ProgressBar::new(self._count_skill_variations_total().try_into().unwrap());
-        pb.set_style(ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {human_pos}/{len} ({eta_precise})")
-            .unwrap()
-            .progress_chars("#>-"));
+        let pb = m.add(ProgressBar::new(
+            self._count_skill_variations_total().try_into().unwrap(),
+        ));
+        pb.set_style(m_sty.clone());
+
+        let abbr_preset_skills_string: String = self
+            .preset_skills
+            .iter()
+            .map(|skill| {
+                let abbr = self.skill_abbreviation_map.get(skill);
+                match abbr {
+                    Some(abbreviation) => return abbreviation.to_string() + ", ",
+                    None => return skill.to_string() + ", ",
+                }
+            })
+            .collect();
+
+        pb.set_message(format!(
+            "{} ({})",
+            self.study.identifier.to_string(),
+            &abbr_preset_skills_string[..abbr_preset_skills_string.len() - 2]
+        ));
 
         while self.count_skill_variations_remaining() > 0 {
             pb.set_position(self.skill_combination_index.try_into().unwrap());

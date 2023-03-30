@@ -3,6 +3,7 @@ pub mod static_duo_skill_study;
 
 use std::collections::HashMap;
 
+use indicatif::{MultiProgress, ProgressStyle};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -44,7 +45,7 @@ pub fn create_study(
 
 /// Runnable studies must have a run function
 pub trait Runnable {
-    fn run(&mut self);
+    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle);
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
