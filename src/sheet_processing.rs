@@ -4,8 +4,8 @@ use crate::equipment::{create_blueprint, Blueprint};
 use crate::skills::{create_hero_skill, create_innate_skill, HeroSkill, InnateSkill};
 
 /// Get the info on innate skills
-pub fn _get_innate_skills_data(
-    path: String,
+pub fn get_innate_skills_data(
+    path: &String,
 ) -> (
     HashMap<String, String>,
     HashMap<String, String>,
@@ -98,8 +98,8 @@ pub fn _get_innate_skills_data(
 }
 
 /// Get the info on hero skills
-pub fn _get_hero_skills_data(
-    path: String,
+pub fn get_hero_skills_data(
+    path: &String,
 ) -> (
     HashMap<String, String>,
     HashMap<String, String>,
@@ -187,7 +187,7 @@ pub fn _get_hero_skills_data(
 }
 
 /// Get the info on hero equipment (e.g. atk, def, etc.) from the Blueprints tab of the Official ST Sheet
-pub fn _get_hero_equipment_data(path: String) -> HashMap<String, Blueprint> {
+pub fn get_hero_equipment_data(path: &String) -> HashMap<String, Blueprint> {
     let mut bp_map: HashMap<String, Blueprint> = Default::default();
 
     let mut reader = csv::ReaderBuilder::new()

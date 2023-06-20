@@ -66,7 +66,13 @@ pub fn create_static_duo_skill_study(
 
 impl Runnable for StaticDuoSkillStudy {
     /// Handle running trials for the study
-    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle) {
+    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle, tx: Sender<(String, u32, u32)>) {
+        tx.send((
+            self.study.identifier.to_string(),
+            0u32,
+            self._count_skill_variations_total() as u32,
+        ))
+        .unwrap();
         info!("Start Study: {}", self.study.identifier);
 
         self.study.status = StudyStatus::Running;
@@ -95,6 +101,12 @@ impl Runnable for StaticDuoSkillStudy {
         ));
 
         while self.count_skill_variations_remaining() > 0 {
+            tx.send((
+                self.study.identifier.to_string(),
+                self.skill_combination_index as u32,
+                self._count_skill_variations_total() as u32,
+            ))
+            .unwrap();
             pb.set_position(self.skill_combination_index.try_into().unwrap());
 
             // Create the combination of skills to test
@@ -170,7 +182,7 @@ impl Runnable for StaticDuoSkillStudy {
 
             // Save Duo Skillz Results
             let duo_skillz_result_csv_path = f!(
-                "target/simulations/{}/csvs/duo_skillz_results.csv",
+                "adept_data/output/simulations/{}/csvs/duo_skillz_results.csv",
                 self.study.identifier
             );
             if let Some(p) = std::path::Path::new(&duo_skillz_result_csv_path).parent() {
@@ -178,7 +190,7 @@ impl Runnable for StaticDuoSkillStudy {
             }
             // Save Trial Results
             let trial_result_csv_path = f!(
-                "target/simulations/{}/csvs/trial_results.csv",
+                "adept_data/output/simulations/{}/csvs/trial_results.csv",
                 self.study.identifier
             );
             if let Some(p) = std::path::Path::new(&trial_result_csv_path).parent() {
@@ -197,6 +209,12 @@ impl Runnable for StaticDuoSkillStudy {
         // Outside While, this is assumed but check anyways because why not...
         if self.count_skill_variations_remaining() == 0 {
             // TODO: Any other tasks that must be done once finished
+            tx.send((
+                self.study.identifier.to_string(),
+                self._count_skill_variations_total() as u32,
+                self._count_skill_variations_total() as u32,
+            ))
+            .unwrap();
             self.study.status = StudyStatus::Finished;
             pb.finish_with_message("Study Complete");
         } else {

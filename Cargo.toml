@@ -1,5 +1,5 @@
 [package]
-name = "st_sim"
+name = "adept_shop_titans_simulator"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,3 +18,7 @@ serde_yaml = "0.9.11"
 itertools = "0.10.4"
 indicatif = "0.17.2"
 rayon = "1.7.0"
+egui = "0.22.0"
+eframe = "0.22.0"
+indexmap = "1.9.3"
+tokio = { version = "1.28.2", features = ["rt", "rt-multi-thread"] }

@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
 // use std::thread;
 // use std::time::Duration;
 
@@ -13,18 +15,8 @@ mod dungeons;
 mod simulations;
 
 mod trials;
-use log::info;
-
-use crate::sheet_processing::{
-    _get_hero_equipment_data, _get_hero_skills_data, _get_innate_skills_data,
-};
-use crate::studies::HeroBuilderInformation;
 
 mod inputs;
-use crate::inputs::{
-    load_dungeons_from_yaml, load_hero_classes_from_yaml, load_heroes_as_sim_heroes_from_csv,
-    load_heroes_from_csv, load_skill_abbreviation_map, load_study_docket,
-};
 
 mod decimals;
 
@@ -40,102 +32,37 @@ mod combinations;
 
 mod dockets;
 
-fn main() {
-    // Create new log file each run
-    let mut trial_logs_path: String;
-    let mut i = 0;
-    loop {
-        trial_logs_path = f!("target/logs/log_{}.log", i);
-        // Increment until file not exist, then create and break
-        if std::path::Path::new(&trial_logs_path).exists() {
-            i += 1;
-            continue;
-        }
-        break;
-    }
-    fast_log::init(fast_log::Config::new().file(&trial_logs_path)).unwrap();
-    info!("Start of Log File");
+mod gui;
 
-    // let study_identifier = String::from("Daimyo_Atk_Main_Single");
+mod init;
 
-    let hero_classes = load_hero_classes_from_yaml(String::from("input/hero_classes.yaml"));
+mod simdata;
 
-    let (hero_skill_tier_1_name_map, hero_skill_any_tier_to_tier_1_name_map, hero_skill_map) =
-        _get_hero_skills_data(String::from(
-            "data_sheets/greensim_hero_skills_v_10.2.1_slash_1.0.1.773.tsv",
-        ));
+fn main() -> Result<(), eframe::Error> {
+    let rt = tokio::runtime::Runtime::new().expect("Unable to create Runtime");
 
-    let (
-        _innate_skill_tier_1_name_map,
-        innate_skill_any_tier_to_tier_1_name_nap,
-        class_innate_skill_names_map,
-        innate_skill_map,
-    ) = _get_innate_skills_data(String::from(
-        "data_sheets/greensim_innate_skills_v_10.2.1_slash_1.0.1.773.tsv",
-    ));
+    // Enter the runtime so that `tokio::spawn` is available immediately.
+    let _enter = rt.enter();
 
-    let bp_map = _get_hero_equipment_data(String::from(
-        "data_sheets/blueprints_v_11.1.1_slash_1.0.1.868.tsv",
-    ));
-    let loaded_heroes = load_heroes_as_sim_heroes_from_csv(
-        String::from("input/hero_builder.csv"),
-        bp_map.clone(),
-        hero_classes.clone(),
-        hero_skill_tier_1_name_map.clone(),
-        hero_skill_map.clone(),
-        class_innate_skill_names_map.clone(),
-        innate_skill_map.clone(),
-    );
+    // // Execute the runtime in its own thread.
+    // // The future doesn't have to do anything. In this example, it just sleeps forever.
+    // std::thread::spawn(move || {
+    //     rt.block_on(async {
+    //         loop {
+    //             tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
+    //         }
+    //     })
+    // });
 
-    let loaded_dungeons = load_dungeons_from_yaml(String::from("input/dungeons.yaml"));
-
-    let (hero_skill_abbreviation_map, hero_abbreviation_skill_map) =
-        load_skill_abbreviation_map(String::from("data_sheets/skill_abbreviation_map.csv"));
-
-    let loaded_heroes_from_builder = load_heroes_from_csv(
-        String::from("input/hero_builder.csv"),
-        bp_map.clone(),
-        hero_classes.clone(),
-    );
-
-    let mut loaded_valid_skills: Vec<String> = Default::default();
-    for (k, v) in &hero_skill_tier_1_name_map {
-        let ksplit: Vec<&str> = k.split(' ').collect();
-        if ksplit[ksplit.len() - 1] == "T4" {
-            loaded_valid_skills.push(v.to_string());
-        }
-    }
-
-    let loaded_hero_builder_information = HeroBuilderInformation {
-        bp_map,
-        hero_classes,
-        hero_skill_tier_1_name_map,
-        hero_skill_any_tier_to_tier_1_name_map,
-        hero_skill_abbreviation_map,
-        hero_abbreviation_skill_map,
-        hero_skill_map,
-        class_innate_skill_names_map,
-        innate_skill_any_tier_to_tier_1_name_nap,
-        innate_skill_map,
+    // UI
+    let options = eframe::NativeOptions {
+        initial_window_size: Some(egui::vec2(600.0, 400.0)),
+        min_window_size: Some(egui::vec2(600.0, 400.0)),
+        ..Default::default()
     };
-
-    /* STUDIES */
-    println!("Loading Docket");
-    let mut docket = load_study_docket(&String::from("input/study_docket.csv"));
-    if docket.get_num_studies() == 0 {
-        println!(
-            "Docket Loaded with {} Studies: Program Closing",
-            docket.get_num_studies()
-        );
-        return;
-    }
-    println!("Docket Loaded with {} Studies", docket.get_num_studies());
-    docket.commence(
-        loaded_heroes,
-        loaded_dungeons,
-        loaded_valid_skills,
-        loaded_heroes_from_builder,
-        loaded_hero_builder_information,
-    );
-    println!("Program Closing");
+    eframe::run_native(
+        "Adept - Shop Titans Combat Simulator",
+        options,
+        Box::new(|_cc| Box::<gui::AdeptApp>::default()),
+    )
 }

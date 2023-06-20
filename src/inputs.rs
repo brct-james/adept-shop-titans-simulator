@@ -292,7 +292,7 @@ pub fn create_dungeon_input(
     };
 }
 
-pub fn load_dungeons_from_yaml(path: String) -> HashMap<String, Dungeon> {
+pub fn load_dungeons_from_yaml(path: &String) -> HashMap<String, Dungeon> {
     let mut dungeons: HashMap<String, Dungeon> = Default::default();
     let reader = std::fs::File::open(path).unwrap();
     for (dungeon_key, dungeon_in) in
@@ -517,7 +517,7 @@ pub fn create_hero_input(
 }
 
 pub fn load_heroes_from_csv(
-    path: String,
+    path: &String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
 ) -> HashMap<String, Hero> {
@@ -558,7 +558,7 @@ pub fn convert_loaded_heroes_to_sim_heroes(
 }
 
 pub fn load_heroes_as_sim_heroes_from_csv(
-    path: String,
+    path: &String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
     hero_skill_tier_1_name_map: HashMap<String, String>,
@@ -614,7 +614,7 @@ pub fn _save_heroes_to_csv(
     return Ok(());
 }
 
-pub fn load_hero_classes_from_yaml(path: String) -> HashMap<String, HeroClass> {
+pub fn load_hero_classes_from_yaml(path: &String) -> HashMap<String, HeroClass> {
     let mut hero_classes: HashMap<String, HeroClass> = Default::default();
     let reader = std::fs::File::open(path).unwrap();
     for (class_name, hero_class) in
@@ -632,7 +632,7 @@ pub fn _save_hero_classes_to_yaml(
     let already_exists = std::path::Path::new(&path).exists();
     let mut hashmap: HashMap<String, HeroClass>;
     if already_exists {
-        hashmap = load_hero_classes_from_yaml(path.to_string());
+        hashmap = load_hero_classes_from_yaml(&path.to_string());
         hashmap.extend(hero_classes);
     } else {
         hashmap = hero_classes;
@@ -658,7 +658,7 @@ pub struct SkillAbbreviationMapInput {
 }
 
 pub fn load_skill_abbreviation_map(
-    path: String,
+    path: &String,
 ) -> (HashMap<String, String>, HashMap<String, String>) {
     let mut abbr_map: HashMap<String, String> = Default::default();
     let mut opposite_map: HashMap<String, String> = Default::default();

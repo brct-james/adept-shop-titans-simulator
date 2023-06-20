@@ -1,7 +1,7 @@
 // pub mod single_hero_skill_study;
 pub mod static_duo_skill_study;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::mpsc::Sender};
 
 use indicatif::{MultiProgress, ProgressStyle};
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ pub fn create_study(
 
 /// Runnable studies must have a run function
 pub trait Runnable {
-    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle);
+    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle, tx: Sender<(String, u32, u32)>);
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

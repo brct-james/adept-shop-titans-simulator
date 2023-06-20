@@ -1,6 +1,9 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::mpsc::Sender;
+use std::sync::{Arc, Mutex};
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use rayon::prelude::*;
@@ -11,6 +14,7 @@ use crate::equipment::BoosterType;
 use crate::hero_builder::Hero;
 use crate::heroes::{create_team, Team};
 use crate::inputs::save_study_docket;
+use crate::simdata::SimData;
 use crate::studies::{HeroBuilderInformation, Runnable};
 use crate::{heroes::SimHero, studies::static_duo_skill_study::create_static_duo_skill_study};
 
@@ -63,32 +67,32 @@ pub struct DocketStudy {
 impl DocketStudy {
     pub fn is_valid(&self, result_index: usize) -> bool {
         if self.identifier.len() == 0 {
-            println!("\tSkipping Record {}: Identifier Is Required", result_index);
+            info!("\tSkipping Record {}: Identifier Is Required", result_index);
             return false;
         }
         if self.sim_qty <= 0 || self.sim_qty > 50000 {
-            println!(
+            info!(
                 "\tSkipping Record {}: Sim Qty Must Be In Range [1,50000]",
                 result_index
             );
             return false;
         }
         if self.runoff_scoring_threshold <= 0.0 || self.runoff_scoring_threshold > 100.0 {
-            println!(
+            info!(
                 "\tSkipping Record {}: Sim Qty Must Be In Range [1,100]",
                 result_index
             );
             return false;
         }
         if self.team_hero_identifiers.len() == 0 {
-            println!(
+            info!(
                 "\tSkipping Record {}: Team Hero Identifiers Are Required",
                 result_index
             );
             return false;
         }
         if self.team_booster.len() == 0 {
-            println!(
+            info!(
                 "\tSkipping Record {}: Team Booster Is Required",
                 result_index
             );
@@ -96,7 +100,7 @@ impl DocketStudy {
         }
         // Preset Skills are NOT required, can be empty to vary all skill slots
         if self.dungeon_specifications.len() == 0 {
-            println!(
+            info!(
                 "\tSkipping Record {}: Dungeon Specifications Are Required",
                 result_index
             );
@@ -153,6 +157,37 @@ pub enum DocketStudySkillNameFormat {
     FullAnyTier,
 }
 
+pub fn commence_from_gui(
+    docket: &mut Docket,
+    sim_data: &mut SimData,
+    tx: Sender<(String, u32, u32)>,
+) {
+    let loaded_hero_builder_information = HeroBuilderInformation {
+        bp_map: sim_data.bp_map.clone(),
+        hero_classes: sim_data.hero_classes.clone(),
+        hero_skill_tier_1_name_map: sim_data.hero_skill_tier_1_name_map.clone(),
+        hero_skill_any_tier_to_tier_1_name_map: sim_data
+            .hero_skill_any_tier_to_tier_1_name_map
+            .clone(),
+        hero_skill_abbreviation_map: sim_data.hero_skill_abbreviation_map.clone(),
+        hero_abbreviation_skill_map: sim_data.hero_abbreviation_skill_map.clone(),
+        hero_skill_map: sim_data.hero_skill_map.clone(),
+        class_innate_skill_names_map: sim_data.class_innate_skill_names_map.clone(),
+        innate_skill_any_tier_to_tier_1_name_nap: sim_data
+            .innate_skill_any_tier_to_tier_1_name_nap
+            .clone(),
+        innate_skill_map: sim_data.innate_skill_map.clone(),
+    };
+    docket.commence(
+        sim_data.loaded_heroes.clone(),
+        sim_data.loaded_dungeons.clone(),
+        sim_data.loaded_valid_skills.clone(),
+        sim_data.loaded_heroes_from_builder.clone(),
+        loaded_hero_builder_information,
+        tx,
+    );
+}
+
 /// Defines a plan for generating and running Studies
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct Docket {
@@ -172,6 +207,14 @@ impl Docket {
         return self.studies.clone();
     }
 
+    pub fn get_study_names(&self) -> Vec<String> {
+        let mut res: Vec<String> = Default::default();
+        for study in self.studies.iter() {
+            res.push(study.identifier.to_string());
+        }
+        return res;
+    }
+
     pub fn get_num_studies(&self) -> usize {
         return self.studies.len();
     }
@@ -183,8 +226,9 @@ impl Docket {
         loaded_valid_skills: Vec<String>,
         loaded_heroes_from_builder: HashMap<String, Hero>,
         loaded_hero_builder_information: HeroBuilderInformation,
+        tx: Sender<(String, u32, u32)>,
     ) {
-        println!("Commencing Docket");
+        info!("Commencing Docket");
         let num_dockets: usize = self.get_num_studies();
         let m = MultiProgress::new();
         let m_sty = ProgressStyle::with_template("{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {human_pos}/{len} ({eta_precise})")
@@ -196,8 +240,23 @@ impl Docket {
         pb.set_message("DOCKET OVERALL PROGRESS");
         pb.set_position(0);
 
-        self.studies.par_iter_mut().for_each(|docket_study| {
-            // println!(
+        tx.send((
+            String::from("DOCKET OVERALL PROGRESS"),
+            0u32,
+            num_dockets as u32,
+        ))
+        .unwrap();
+
+        let completed_study_count: Arc<Mutex<u32>> = Arc::new(Mutex::new(0u32));
+
+        let mut studies_with_tx: Vec<(&mut DocketStudy, Sender<(String, u32, u32)>)> = self
+            .studies
+            .iter_mut()
+            .map(|study| (study, tx.clone()))
+            .collect();
+
+        studies_with_tx.par_iter_mut().for_each(|(docket_study, tx)| {
+            // info!(
             //     "Docket Study '{}' [{}]: {} of {}: {}",
             //     docket_study.identifier,
             //     docket_study.type_,
@@ -211,6 +270,12 @@ impl Docket {
             // );
             // Skip completed studies
             if docket_study.completed == true {
+                *completed_study_count.lock().unwrap() += 1;
+                tx.send((
+                    String::from("DOCKET OVERALL PROGRESS"),
+                    *completed_study_count.lock().unwrap(), num_dockets as u32
+                )).unwrap();
+                info!("Skipping study {} since it is already completed.", docket_study.identifier);
                 return;
             }
 
@@ -220,12 +285,12 @@ impl Docket {
             match parse_team_option {
                 Some(parsed_team) => team = parsed_team,
                 None => {
-                    println!("\tFailed to Parse Team: Skipping to Next Study");
+                    info!("\tFailed to Parse Team: Skipping to Next Study");
                     return;
                 }
             }
             let team_heroes = team.get_heroes();
-            // println!("\tParsed Team");
+            // info!("\tParsed Team");
 
             // Parse Dungeons
             let parse_dungeons_option = parse_dungeons(&docket_study, &loaded_dungeons);
@@ -233,11 +298,11 @@ impl Docket {
             match parse_dungeons_option {
                 Some(parsed_dungeon) => dungeons = parsed_dungeon,
                 None => {
-                    println!("\tFailed to Parse Dungeons: Skipping to Next Study");
+                    info!("\tFailed to Parse Dungeons: Skipping to Next Study");
                     return;
                 }
             }
-            // println!("\tParsed Dungeons");
+            // info!("\tParsed Dungeons");
 
             // Parse Excluded/Valid Skills
             let parse_valid_skills_option = parse_valid_skills(
@@ -250,11 +315,11 @@ impl Docket {
             match parse_valid_skills_option {
                 Some(parsed_vs) => valid_skills = parsed_vs,
                 None => {
-                    println!("\tFailed to Parse Excluded Skills (Did not conform to expected format): Skipping to Next Study");
+                    info!("\tFailed to Parse Excluded Skills (Did not conform to expected format): Skipping to Next Study");
                     return;
                 }
             }
-            // println!("\tParsed Valid/Excluded Skills");
+            // info!("\tParsed Valid/Excluded Skills");
 
             // Parse Static/Preset Skills
             let mut preset_skills: Vec<String> = Default::default();
@@ -275,11 +340,11 @@ impl Docket {
             match parse_static_skills_option {
                 Some(parsed_static_skills) => static_skills = parsed_static_skills,
                 None => {
-                    println!("\tFailed to Parse Static/Preset Skills (Did not conform to expected format): Skipping to Next Study");
+                    info!("\tFailed to Parse Static/Preset Skills (Did not conform to expected format): Skipping to Next Study");
                     return;
                 }
             }
-            // println!("\tParsed Preset Skills");
+            // info!("\tParsed Preset Skills");
 
             // Determine correct create function based on study type
             match docket_study.type_ {
@@ -302,29 +367,34 @@ impl Docket {
                             .clone(),
                     );
 
-                    // println!("\tCreated Study (StaticDuoSkillStudy)");
+                    // info!("\tCreated Study (StaticDuoSkillStudy)");
 
-                    // println!(
+                    // info!(
                     //     "\tSkill Variations Remaining to Test: {}",
                     //     study.count_skill_variations_remaining()
                     // );
 
-                    study.run(&m, &m_sty);
+                    study.run(&m, &m_sty, tx.clone());
 
                     // docket_completion_tracker.studies[docket_index - 1].completed = true;
 
+                    *completed_study_count.lock().unwrap() += 1;
+                    tx.send((
+                        String::from("DOCKET OVERALL PROGRESS"),
+                        *completed_study_count.lock().unwrap(), num_dockets as u32
+                    )).unwrap();
                     docket_study.completed = true;
 
-                    println!("\n\tStudy Completed");
+                    info!("\n\tStudy Completed");
                     pb.inc(1);
                 }
             }
-            println!("Docket Study Completed");
+            info!("Docket Study Completed");
             // TODO: Reimplement save_study_docket during execution...
             // save_study_docket(&self.path, &self).unwrap();
         });
         save_study_docket(&self.path, &self).unwrap();
-        println!("Docket Completed");
+        info!("Docket Completed");
     }
 }
 
