@@ -134,6 +134,7 @@ impl Simulation {
                     info!("{}", item);
                 }
                 info!("PANICKING: {}", panic_string);
+                log::logger().flush();
                 panic!("{}", panic_string);
             }
             heroes_alive = temp1;

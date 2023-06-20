@@ -66,11 +66,18 @@ pub fn create_static_duo_skill_study(
 
 impl Runnable for StaticDuoSkillStudy {
     /// Handle running trials for the study
-    fn run(&mut self, m: &MultiProgress, m_sty: &ProgressStyle, tx: Sender<(String, u32, u32)>) {
+    fn run(
+        &mut self,
+        m: &MultiProgress,
+        m_sty: &ProgressStyle,
+        tx: Sender<(String, u32, u32, Instant)>,
+    ) {
+        let study_start_instant = Instant::now();
         tx.send((
             self.study.identifier.to_string(),
             0u32,
             self._count_skill_variations_total() as u32,
+            study_start_instant,
         ))
         .unwrap();
         info!("Start Study: {}", self.study.identifier);
@@ -105,6 +112,7 @@ impl Runnable for StaticDuoSkillStudy {
                 self.study.identifier.to_string(),
                 self.skill_combination_index as u32,
                 self._count_skill_variations_total() as u32,
+                study_start_instant,
             ))
             .unwrap();
             pb.set_position(self.skill_combination_index.try_into().unwrap());
@@ -213,12 +221,15 @@ impl Runnable for StaticDuoSkillStudy {
                 self.study.identifier.to_string(),
                 self._count_skill_variations_total() as u32,
                 self._count_skill_variations_total() as u32,
+                study_start_instant,
             ))
             .unwrap();
             self.study.status = StudyStatus::Finished;
             pb.finish_with_message("Study Complete");
         } else {
-            panic!("This should not occur, while running study managed to escape while loop without study being finished status...")
+            info!("This should not occur, while running study managed to escape while loop with skill variations remaining...");
+            log::logger().flush();
+            panic!("This should not occur, while running study managed to escape while loop with skill variations remaining...")
         }
     }
 }

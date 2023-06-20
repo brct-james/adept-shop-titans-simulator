@@ -1,7 +1,10 @@
 use eframe::egui;
 use indexmap::IndexMap;
 use log::info;
-use std::sync::mpsc::{Receiver, Sender};
+use std::{
+    sync::mpsc::{Receiver, Sender},
+    time::Instant,
+};
 
 use crate::{
     dockets::Docket,
@@ -15,15 +18,15 @@ use crate::{
 };
 
 pub struct AdeptApp {
-    pub tx: Sender<(String, u32, u32)>,
-    pub rx: Receiver<(String, u32, u32)>,
+    pub tx: Sender<(String, u32, u32, Instant)>,
+    pub rx: Receiver<(String, u32, u32, Instant)>,
     pub started: bool,
     pub docket: Docket,
     pub selected_study: String,
     pub required_files: IndexMap<String, (String, bool)>,
     pub sim_data: SimData,
     pub sim_running: bool,
-    pub progress: IndexMap<String, (u32, u32)>, // (sort_order, identifier, progress, total)
+    pub progress: IndexMap<String, (u32, u32, Instant)>, // (identifier, (progress, total, start_time))
 }
 
 impl Default for AdeptApp {
@@ -240,7 +243,7 @@ impl eframe::App for AdeptApp {
 
         // Handle receiving from channel
         if let Ok(msg) = self.rx.try_recv() {
-            *self.progress.entry(msg.0).or_insert((msg.1, msg.2)) = (msg.1, msg.2);
+            *self.progress.entry(msg.0).or_insert((msg.1, msg.2, msg.3)) = (msg.1, msg.2, msg.3);
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -289,10 +292,19 @@ impl eframe::App for AdeptApp {
                 }
             });
             ui.add_visible_ui(self.sim_running, |ui| {
-                for (study, (progress, total)) in self.progress.iter() {
+                for (study, (progress, total, start)) in self.progress.iter() {
                     ui.horizontal(|ui| {
                         ui.add_visible(*study != String::from("DOCKET OVERALL PROGRESS") || progress < total, egui::widgets::Spinner::new());
-                        ui.label(format!("{} [{} / {}]", study, progress, total));
+                        let elapsed = start.elapsed().as_secs();
+                        let seconds_elapsed = elapsed % 60;
+                        let minutes_elapsed = (elapsed / 60) % 60;
+                        let hours_elapsed = (elapsed / 60) / 60;
+                        let estimated = elapsed * *total as u64 / *progress as u64;
+                        let seconds_estimated = estimated % 60;
+                        let minutes_estimated = (estimated / 60) % 60;
+                        let hours_estimated = (estimated / 60) / 60;
+                        ui.label(format!("{} [{} / {}] 
+                        ({:0>2}:{:0>2}:{:0>2} elapsed of {:0>2}:{:0>2}:{:0>2} estimated)", study, progress, total, hours_elapsed, minutes_elapsed, seconds_elapsed, hours_estimated, minutes_estimated, seconds_estimated));
                         ui.add(
                             egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
                                 .show_percentage(),
@@ -311,8 +323,5 @@ fn start_docket(adept_app: &mut AdeptApp) {
     let tx = adept_app.tx.clone();
     tokio::spawn(async move {
         crate::dockets::commence_from_gui(&mut docket, &mut sim_data, tx);
-
-        // After parsing the response, notify the GUI thread of the increment value.
-        // let _ = tx.send(body.json.incr);
     });
 }

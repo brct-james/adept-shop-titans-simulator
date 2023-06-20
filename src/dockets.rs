@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use log::info;
@@ -160,7 +161,7 @@ pub enum DocketStudySkillNameFormat {
 pub fn commence_from_gui(
     docket: &mut Docket,
     sim_data: &mut SimData,
-    tx: Sender<(String, u32, u32)>,
+    tx: Sender<(String, u32, u32, Instant)>,
 ) {
     let loaded_hero_builder_information = HeroBuilderInformation {
         bp_map: sim_data.bp_map.clone(),
@@ -226,7 +227,7 @@ impl Docket {
         loaded_valid_skills: Vec<String>,
         loaded_heroes_from_builder: HashMap<String, Hero>,
         loaded_hero_builder_information: HeroBuilderInformation,
-        tx: Sender<(String, u32, u32)>,
+        tx: Sender<(String, u32, u32, Instant)>,
     ) {
         info!("Commencing Docket");
         let num_dockets: usize = self.get_num_studies();
@@ -240,20 +241,23 @@ impl Docket {
         pb.set_message("DOCKET OVERALL PROGRESS");
         pb.set_position(0);
 
+        let docket_start_instant = Instant::now();
+
         tx.send((
             String::from("DOCKET OVERALL PROGRESS"),
             0u32,
             num_dockets as u32,
+            docket_start_instant,
         ))
         .unwrap();
 
         let completed_study_count: Arc<Mutex<u32>> = Arc::new(Mutex::new(0u32));
 
-        let mut studies_with_tx: Vec<(&mut DocketStudy, Sender<(String, u32, u32)>)> = self
-            .studies
-            .iter_mut()
-            .map(|study| (study, tx.clone()))
-            .collect();
+        let mut studies_with_tx: Vec<(&mut DocketStudy, Sender<(String, u32, u32, Instant)>)> =
+            self.studies
+                .iter_mut()
+                .map(|study| (study, tx.clone()))
+                .collect();
 
         studies_with_tx.par_iter_mut().for_each(|(docket_study, tx)| {
             // info!(
@@ -273,7 +277,7 @@ impl Docket {
                 *completed_study_count.lock().unwrap() += 1;
                 tx.send((
                     String::from("DOCKET OVERALL PROGRESS"),
-                    *completed_study_count.lock().unwrap(), num_dockets as u32
+                    *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
                 )).unwrap();
                 info!("Skipping study {} since it is already completed.", docket_study.identifier);
                 return;
@@ -381,7 +385,7 @@ impl Docket {
                     *completed_study_count.lock().unwrap() += 1;
                     tx.send((
                         String::from("DOCKET OVERALL PROGRESS"),
-                        *completed_study_count.lock().unwrap(), num_dockets as u32
+                        *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
                     )).unwrap();
                     docket_study.completed = true;
 
