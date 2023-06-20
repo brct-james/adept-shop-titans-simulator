@@ -84,8 +84,8 @@ fn main() -> Result<(), eframe::Error> {
 
     // UI
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(720.0, 480.0)),
-        min_window_size: Some(egui::vec2(720.0, 480.0)),
+        initial_window_size: Some(egui::vec2(900.0, 500.0)),
+        min_window_size: Some(egui::vec2(900.0, 500.0)),
         ..Default::default()
     };
     eframe::run_native(

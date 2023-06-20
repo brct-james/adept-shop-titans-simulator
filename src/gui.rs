@@ -26,7 +26,7 @@ pub struct AdeptApp {
     pub required_files: IndexMap<String, (String, bool)>,
     pub sim_data: SimData,
     pub sim_running: bool,
-    pub progress: IndexMap<String, (u32, u32, Instant)>, // (identifier, (progress, total, start_time))
+    pub progress: IndexMap<String, (u32, u32, Instant, Instant)>, // (identifier, (progress, total, start_time, end_time))
 }
 
 impl Default for AdeptApp {
@@ -243,25 +243,32 @@ impl eframe::App for AdeptApp {
 
         // Handle receiving from channel
         if let Ok(msg) = self.rx.try_recv() {
-            *self.progress.entry(msg.0).or_insert((msg.1, msg.2, msg.3)) = (msg.1, msg.2, msg.3);
+            *self
+                .progress
+                .entry(msg.0)
+                .or_insert((msg.1, msg.2, msg.3, Instant::now())) =
+                (msg.1, msg.2, msg.3, Instant::now());
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Adept - Shop Titans Combat Simulator");
+            ui.heading(egui::RichText::new("Adept - Shop Titans Combat Simulator").strong());
             ui.vertical(|ui| {
-                ui.heading("Loaded Files:");
-                for (file_id, (file_location, mut file_loaded)) in self.required_files.iter() {
-                    ui.horizontal(|ui| {
+                ui.heading(egui::RichText::new("Loaded Files").strong());
+                egui::Grid::new("sim_stats_grid").striped(true).show(ui, |ui| {
+                    ui.label(egui::RichText::new("Loaded?").strong());
+                    ui.label(egui::RichText::new("Identifier").strong());
+                    ui.label(egui::RichText::new("Expected Path").strong());
+                    ui.end_row();
+                    for (file_id, (file_location, mut file_loaded)) in self.required_files.iter() {
                         ui.add_enabled(false, egui::widgets::Checkbox::new(&mut file_loaded, ""));
-                        ui.label(format!(
-                            "{} | Expected Location: {}",
-                            file_id, file_location
-                        ))
-                    });
-                }
+                        ui.label(file_id);
+                        ui.label(file_location);
+                        ui.end_row()
+                    }
+                });
             });
             ui.horizontal(|ui| {
-                ui.label("Select the Study to Run:");
+                ui.label(egui::RichText::new("Select the Study to Run:").strong());
                 egui::ComboBox::from_label("")
                     .selected_text(format!("{}", self.selected_study))
                     .show_ui(ui, |ui| {
@@ -292,45 +299,89 @@ impl eframe::App for AdeptApp {
                 }
             });
             ui.add_visible_ui(self.sim_running, |ui| {
-                for (study, (progress, total, start)) in self.progress.iter() {
-                    if progress < total {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::widgets::Spinner::new());
+                egui::Grid::new("sim_stats_grid").striped(true).show(ui, |ui| {
+                    ui.label(egui::RichText::new("").strong());
+                    ui.label(egui::RichText::new("Identifier").strong());
+                    ui.label(egui::RichText::new("Completed Variants").strong());
+                    ui.label(egui::RichText::new("Total Variants").strong());
+                    ui.label(egui::RichText::new("Time Elapsed").strong());
+                    ui.label(egui::RichText::new("Est. Time Remaining").strong());
+                    ui.horizontal(|ui| {
+                        ui.set_width(200.0);
+                        ui.label(egui::RichText::new("").strong());
+                    });
+                    ui.end_row();
+                    for (study, (progress, total, start, end)) in self.progress.iter() {
+                        if progress < total {
                             let elapsed = start.elapsed().as_secs();
                             let seconds_elapsed = elapsed % 60;
                             let minutes_elapsed = (elapsed / 60) % 60;
                             let hours_elapsed = (elapsed / 60) / 60;
-                            let estimated: u64;
+                            let mut estimated: u64;
                             if *progress != 0u32 {
                                 estimated = elapsed * *total as u64 / *progress as u64;
                             } else {
                                 estimated = elapsed * *total as u64 / 1 as u64;
                             }
+                            if *study == String::from("DOCKET OVERALL PROGRESS") {
+                                let max_estimated: u64 = self.progress.iter().map(|(_, (v_prog, v_tot, v_start, v_end))| {
+                                    if v_prog >= v_tot {
+                                        return v_end.duration_since(*v_start).as_secs();
+                                    }
+                                    let v_elapsed = v_start.elapsed().as_secs();
+                                    let v_estimated: u64;
+                                    if *v_prog != 0u32 {
+                                        v_estimated = v_elapsed * *v_tot as u64 / *v_prog as u64;
+                                    } else {
+                                        v_estimated = v_elapsed * *v_tot as u64 / 1 as u64;
+                                    }
+                                    return v_estimated;
+                                }).max().unwrap();
+                                estimated = max_estimated;
+                            }
                             let seconds_remaining = (estimated - elapsed) % 60;
                             let minutes_remaining = ((estimated - elapsed) / 60) % 60;
                             let hours_remaining = ((estimated - elapsed) / 60) / 60;
-                            let formatted_string: String;
+                            ui.add(egui::widgets::Spinner::new());
                             if *study == String::from("DOCKET OVERALL PROGRESS") {
-                                formatted_string = format!("{} [{} / {}]", study, progress, total);
+                                ui.label(egui::RichText::new("Docket Overall").strong().underline());
                             } else {
-                                formatted_string = format!("{} [{} / {}] ({:0>2}:{:0>2}:{:0>2} elapsed, {:0>2}:{:0>2}:{:0>2} est. remaining)", study, progress, total, hours_elapsed, minutes_elapsed, seconds_elapsed, hours_remaining, minutes_remaining, seconds_remaining);
+                                ui.label(study);
                             }
-                            ui.label(formatted_string);
+                            ui.label(format!("{}", progress));
+                            ui.label(format!("{}", total));
+                            ui.label(format!("{:0>2}:{:0>2}:{:0>2}", hours_elapsed, minutes_elapsed, seconds_elapsed));
+                            ui.label(format!("{:0>2}:{:0>2}:{:0>2}", hours_remaining, minutes_remaining, seconds_remaining));
                             ui.add(
                                 egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
                                     .show_percentage(),
                             );
-                        });
-                    } else {
-                        ui.horizontal(|ui| {
-                            ui.label(format!("FINISHED | {} [{} / {}]", study, progress, total));
-                            ui.add(
-                                egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
-                                    .show_percentage(),
-                            );
-                        });
+                            ui.end_row();
+                        } else {
+                            ui.horizontal(|ui| {
+                                let elapsed = end.duration_since(*start).as_secs();
+                                let seconds_elapsed = elapsed % 60;
+                                let minutes_elapsed = (elapsed / 60) % 60;
+                                let hours_elapsed = (elapsed / 60) / 60;
+                                ui.label("");
+                                ui.label(study);
+                                ui.label(format!("{}", progress));
+                                ui.label(format!("{}", total));
+                                ui.label(format!("{:0>2}:{:0>2}:{:0>2}", hours_elapsed, minutes_elapsed, seconds_elapsed));
+                                ui.label(format!("00:00:00"));
+                                ui.add(
+                                    egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
+                                        .show_percentage(),
+                                );
+                                ui.end_row();
+                                ui.add(
+                                    egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
+                                        .show_percentage(),
+                                );
+                            });
+                        }
                     }
-                }
+                });
             });
         });
     }
