@@ -1,4 +1,4 @@
-# shop-titans-simulator
+# Adept - Shop Titans Combat Simulator
 
 A rust-based simulator for the game Shop Titans
 
