@@ -1,6 +1,6 @@
 use eframe::egui;
 use indexmap::IndexMap;
-use log::info;
+use log::{error, info};
 use std::{
     sync::mpsc::{Receiver, Sender},
     time::Instant,
@@ -110,7 +110,7 @@ impl eframe::App for AdeptApp {
                             || self.sim_data.class_innate_skill_names_map.len() == 0
                             || self.sim_data.innate_skill_map.len() == 0
                         {
-                            info!("Hero builder could not be loaded because one or more of the files it depends on was not loaded");
+                            error!("Hero builder could not be loaded because one or more of the files it depends on was not loaded");
                             log::logger().flush();
                             panic!("Hero builder could not be loaded because one or more of the files it depends on was not loaded");
                         }
@@ -299,7 +299,12 @@ impl eframe::App for AdeptApp {
                         let seconds_elapsed = elapsed % 60;
                         let minutes_elapsed = (elapsed / 60) % 60;
                         let hours_elapsed = (elapsed / 60) / 60;
-                        let estimated = elapsed * *total as u64 / *progress as u64;
+                        let estimated: u64;
+                        if *progress != 0u32 {
+                            estimated = elapsed * *total as u64 / *progress as u64;
+                        } else {
+                            estimated = elapsed * *total as u64 / 1 as u64;
+                        }
                         let seconds_estimated = estimated % 60;
                         let minutes_estimated = (estimated / 60) % 60;
                         let hours_estimated = (estimated / 60) / 60;

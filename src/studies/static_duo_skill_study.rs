@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use log::info;
+use log::{error, info};
 
 use crate::{
     dungeons::TrialDungeon, heroes::Team, inputs::convert_loaded_heroes_to_sim_heroes, studies::*,
@@ -227,7 +227,7 @@ impl Runnable for StaticDuoSkillStudy {
             self.study.status = StudyStatus::Finished;
             pb.finish_with_message("Study Complete");
         } else {
-            info!("This should not occur, while running study managed to escape while loop with skill variations remaining...");
+            error!("This should not occur, while running study managed to escape while loop with skill variations remaining...");
             log::logger().flush();
             panic!("This should not occur, while running study managed to escape while loop with skill variations remaining...")
         }

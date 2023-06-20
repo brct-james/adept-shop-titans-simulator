@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::info;
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -191,7 +191,7 @@ impl Hero {
         hero_classes: &HashMap<String, HeroClass>,
     ) {
         if !hero_classes.contains_key(&self.class) {
-            info!(
+            error!(
                 "Encountered unknown class {} for hero {}",
                 self.class, self.identifier
             );
@@ -207,7 +207,7 @@ impl Hero {
 
         for (i, equipment) in self.equipment_equipped.iter().enumerate() {
             if !bp_map.contains_key(equipment) {
-                info!(
+                error!(
                     "Equipment {} could not be validated as a known item",
                     equipment
                 );
@@ -219,7 +219,7 @@ impl Hero {
             }
             let blueprint = bp_map.get(equipment).unwrap();
             if !class.equipment_allowed[i].contains(&blueprint.get_type()) {
-                info!(
+                error!(
                     "Equipment {} is of type {} that is not allowed for this class in this slot (# {}). Valid options: {:#?}",
                     equipment,
                     blueprint.get_type(),
@@ -238,7 +238,7 @@ impl Hero {
 
             let split_vec = self.elements_socketed[i].split(" ").collect::<Vec<&str>>();
             if split_vec.len() < 2 {
-                info!(
+                error!(
                     "Element {} must conform to format [type] [grade: 1-4]",
                     self.elements_socketed[i]
                 );
@@ -277,13 +277,13 @@ impl Hero {
                         }
                     }
                     _ => {
-                        info!("Unknown element type {}", element);
+                        error!("Unknown element type {}", element);
                         log::logger().flush();
                         panic!("Unknown element grade {}", grade)
                     }
                 }
             } else {
-                info!("Unknown element type {}", element);
+                error!("Unknown element type {}", element);
                 log::logger().flush();
                 panic!("Unknown element type {}", element);
             }
@@ -298,7 +298,7 @@ impl Hero {
     ) -> String {
         if !class_innate_skill_names_map.contains_key(&self.class) {
             // Class not found in map
-            info!(
+            error!(
                 "Class {} could not be found in keys for class_innate_skill_names_map",
                 self.class
             );
@@ -342,7 +342,7 @@ impl Hero {
         base_skill_name: String,
     ) -> (u8, HeroSkill) {
         if !hero_skill_map.contains_key(&base_skill_name) {
-            info!("Unknown skill name: {}", base_skill_name);
+            error!("Unknown skill name: {}", base_skill_name);
             log::logger().flush();
             panic!("Unknown skill name: {}", base_skill_name);
         }
@@ -450,7 +450,7 @@ impl Hero {
 
     pub fn scale_by_class(&mut self, hero_classes: &HashMap<String, HeroClass>) {
         if !hero_classes.contains_key(&self.class) {
-            info!(
+            error!(
                 "Encountered unknown class {} for hero {}",
                 self.class, self.identifier
             );
@@ -577,7 +577,7 @@ impl Hero {
                     continue;
                 }
                 if !hero_skill_map.contains_key(skill_name) {
-                    info!(
+                    error!(
                         "Skill {} could not be found in keys for hero_skill_map",
                         skill_name
                     );
@@ -634,7 +634,7 @@ impl Hero {
                 "Epic" => gear_quality_bonus = 2.0,
                 "Legendary" => gear_quality_bonus = 3.0,
                 _ => {
-                    info!("Unknown gear_quality {}", gear_quality);
+                    error!("Unknown gear_quality {}", gear_quality);
                     log::logger().flush();
                     panic!("Unknown gear_quality {}", gear_quality)
                 }
@@ -693,7 +693,7 @@ impl Hero {
                     gear_element_hp_bonus = 18.0;
                 }
                 _ => {
-                    info!("Unknown gear_element_tier {}", gear_element_tier);
+                    error!("Unknown gear_element_tier {}", gear_element_tier);
                     log::logger().flush();
                     panic!("Unknown gear_element_tier {}", gear_element_tier)
                 }
@@ -770,7 +770,7 @@ impl Hero {
                     gear_spirit_hp_bonus = 18.0;
                 }
                 _ => {
-                    info!("Unknown gear_spirit_tier {}", gear_spirit_tier);
+                    error!("Unknown gear_spirit_tier {}", gear_spirit_tier);
                     log::logger().flush();
                     panic!("Unknown gear_spirit_tier {}", gear_spirit_tier)
                 }
@@ -1092,7 +1092,7 @@ impl Hero {
                 continue;
             }
             if !hero_skill_map.contains_key(skill_name) {
-                info!(
+                error!(
                     "Skill {} could not be found in keys for hero_skill_map",
                     skill_name
                 );

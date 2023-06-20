@@ -38,7 +38,35 @@ mod init;
 
 mod simdata;
 
+use std::ops::Deref;
+use std::panic;
+
+use log::{error, warn};
+
 fn main() -> Result<(), eframe::Error> {
+    panic::set_hook(Box::new(|panic_info| {
+        let (filename, line) = panic_info
+            .location()
+            .map(|loc| (loc.file(), loc.line()))
+            .unwrap_or(("<unknown>", 0));
+
+        let cause = panic_info
+            .payload()
+            .downcast_ref::<String>()
+            .map(String::deref);
+
+        let cause = cause.unwrap_or_else(|| {
+            panic_info
+                .payload()
+                .downcast_ref::<&str>()
+                .map(|s| *s)
+                .unwrap_or("<cause unknown>")
+        });
+
+        error!("A panic occurred at {}:{}: {}", filename, line, cause);
+        log::logger().flush();
+    }));
+
     let rt = tokio::runtime::Runtime::new().expect("Unable to create Runtime");
 
     // Enter the runtime so that `tokio::spawn` is available immediately.
@@ -64,5 +92,7 @@ fn main() -> Result<(), eframe::Error> {
         "Adept - Shop Titans Combat Simulator",
         options,
         Box::new(|_cc| Box::<gui::AdeptApp>::default()),
-    )
+    )?;
+    warn!("Main Thread Exiting - Unless you intentionally closed the app this is an issue.");
+    Ok(())
 }

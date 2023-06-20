@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-use log::info;
+use log::{error, info};
 
 /// A simulated encounter between a Team and a Dungeon
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -133,7 +133,7 @@ impl Simulation {
                 for item in log_queue {
                     info!("{}", item);
                 }
-                info!("PANICKING: {}", panic_string);
+                error!("PANICKING: {}", panic_string);
                 log::logger().flush();
                 panic!("{}", panic_string);
             }
