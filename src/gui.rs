@@ -293,28 +293,43 @@ impl eframe::App for AdeptApp {
             });
             ui.add_visible_ui(self.sim_running, |ui| {
                 for (study, (progress, total, start)) in self.progress.iter() {
-                    ui.horizontal(|ui| {
-                        ui.add_visible(*study != String::from("DOCKET OVERALL PROGRESS") || progress < total, egui::widgets::Spinner::new());
-                        let elapsed = start.elapsed().as_secs();
-                        let seconds_elapsed = elapsed % 60;
-                        let minutes_elapsed = (elapsed / 60) % 60;
-                        let hours_elapsed = (elapsed / 60) / 60;
-                        let estimated: u64;
-                        if *progress != 0u32 {
-                            estimated = elapsed * *total as u64 / *progress as u64;
-                        } else {
-                            estimated = elapsed * *total as u64 / 1 as u64;
-                        }
-                        let seconds_estimated = estimated % 60;
-                        let minutes_estimated = (estimated / 60) % 60;
-                        let hours_estimated = (estimated / 60) / 60;
-                        ui.label(format!("{} [{} / {}] 
-                        ({:0>2}:{:0>2}:{:0>2} elapsed of {:0>2}:{:0>2}:{:0>2} estimated)", study, progress, total, hours_elapsed, minutes_elapsed, seconds_elapsed, hours_estimated, minutes_estimated, seconds_estimated));
-                        ui.add(
-                            egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
-                                .show_percentage(),
-                        );
-                    });
+                    if progress < total {
+                        ui.horizontal(|ui| {
+                            ui.add(egui::widgets::Spinner::new());
+                            let elapsed = start.elapsed().as_secs();
+                            let seconds_elapsed = elapsed % 60;
+                            let minutes_elapsed = (elapsed / 60) % 60;
+                            let hours_elapsed = (elapsed / 60) / 60;
+                            let estimated: u64;
+                            if *progress != 0u32 {
+                                estimated = elapsed * *total as u64 / *progress as u64;
+                            } else {
+                                estimated = elapsed * *total as u64 / 1 as u64;
+                            }
+                            let seconds_remaining = (estimated - elapsed) % 60;
+                            let minutes_remaining = ((estimated - elapsed) / 60) % 60;
+                            let hours_remaining = ((estimated - elapsed) / 60) / 60;
+                            let formatted_string: String;
+                            if *study == String::from("DOCKET OVERALL PROGRESS") {
+                                formatted_string = format!("{} [{} / {}]", study, progress, total);
+                            } else {
+                                formatted_string = format!("{} [{} / {}] ({:0>2}:{:0>2}:{:0>2} elapsed, {:0>2}:{:0>2}:{:0>2} est. remaining)", study, progress, total, hours_elapsed, minutes_elapsed, seconds_elapsed, hours_remaining, minutes_remaining, seconds_remaining);
+                            }
+                            ui.label(formatted_string);
+                            ui.add(
+                                egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
+                                    .show_percentage(),
+                            );
+                        });
+                    } else {
+                        ui.horizontal(|ui| {
+                            ui.label(format!("FINISHED | {} [{} / {}]", study, progress, total));
+                            ui.add(
+                                egui::widgets::ProgressBar::new(*progress as f32 / *total as f32)
+                                    .show_percentage(),
+                            );
+                        });
+                    }
                 }
             });
         });
