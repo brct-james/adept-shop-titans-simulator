@@ -236,8 +236,8 @@ impl Hero {
                 );
                 log::logger().flush();
                 panic!(
-                    "Element {} must conform to format [type] [grade: 1-4]",
-                    self.elements_socketed[i]
+                    "Element {} must conform to format [type] [grade: 1-4] (id: {})",
+                    self.elements_socketed[i], self.identifier
                 );
             }
             let element = split_vec[0];
@@ -271,13 +271,19 @@ impl Hero {
                     _ => {
                         error!("Unknown element type {}", element);
                         log::logger().flush();
-                        panic!("Unknown element grade {}", grade)
+                        panic!(
+                            "Unknown element grade {} for identifier {}",
+                            grade, self.identifier
+                        )
                     }
                 }
             } else {
                 error!("Unknown element type {}", element);
                 log::logger().flush();
-                panic!("Unknown element type {}", element);
+                panic!(
+                    "Unknown element type {} for identifier {}",
+                    element, self.identifier
+                );
             }
         }
         let mut do_panic = false;
@@ -307,7 +313,10 @@ impl Hero {
         }
         if do_panic {
             log::logger().flush();
-            panic!("Some equipment failed validation");
+            panic!(
+                "Some equipment failed validation for identifier {}",
+                self.identifier
+            );
         }
 
         self.element_qty = element_qty;
@@ -325,8 +334,8 @@ impl Hero {
             );
             log::logger().flush();
             panic!(
-                "Class {} could not be found in keys for class_innate_skill_names_map",
-                self.class
+                "Class {} could not be found in keys for class_innate_skill_names_map for identifier {}",
+                self.class, self.identifier
             );
         }
 
@@ -365,7 +374,10 @@ impl Hero {
         if !hero_skill_map.contains_key(&base_skill_name) {
             error!("Unknown skill name: {}", base_skill_name);
             log::logger().flush();
-            panic!("Unknown skill name: {}", base_skill_name);
+            panic!(
+                "Unknown skill name: {} for identifier {}",
+                base_skill_name, self.identifier
+            );
         }
 
         let mut skill = &hero_skill_map[&base_skill_name];
@@ -651,7 +663,10 @@ impl Hero {
             }
             if do_panic {
                 log::logger().flush();
-                panic!("Some skills could not be found in keys for hero_skill_map");
+                panic!(
+                    "Some skills could not be found in keys for hero_skill_map for identifier {}",
+                    self.identifier
+                );
             }
 
             let gear_quality = self.equipment_quality[gear_index].as_str();
