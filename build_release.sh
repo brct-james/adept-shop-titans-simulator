@@ -1,7 +1,7 @@
 clear
 cargo fmt
 cross build --bin adept_shop_titans_simulator --release --target x86_64-pc-windows-gnu
-rm -rf releases
+rm -rf releases/build
 mkdir -p releases/build/adept/adept_data
 cp -r target/x86_64-pc-windows-gnu/release/adept_shop_titans_simulator.exe releases/build/adept/adept_shop_titans_simulator.exe
 cp -r bundle releases/build/adept/adept_data/bundle
