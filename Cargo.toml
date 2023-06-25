@@ -1,6 +1,6 @@
 [package]
 name = "adept_shop_titans_simulator"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,12 +13,12 @@ log = "0.4"
 fast_log = {version = "1.5.30"}
 fstrings = "0.2.3"
 csv = "1.1.6"
-strum = { version = "0.24", features = ["derive"] }
+strum = { version = "0.25", features = ["derive"] }
 serde_yaml = "0.9.11"
-itertools = "0.10.4"
+itertools = "0.11"
 indicatif = "0.17.2"
 rayon = "1.7.0"
 egui = "0.22.0"
 eframe = "0.22.0"
-indexmap = "1.9.3"
-tokio = { version = "1.28.2", features = ["rt", "rt-multi-thread", "time"] }
+indexmap = "2.0"
+tokio = { version = "1.28", features = ["rt", "rt-multi-thread", "time"] }

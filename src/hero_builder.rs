@@ -283,7 +283,6 @@ impl Hero {
                     "Equipment {} could not be validated as a known item",
                     equipment
                 );
-                log::logger().flush();
             }
         }
         if equipment_that_is_not_allowed_on_the_specified_class.len() > 0 {
@@ -296,10 +295,10 @@ impl Hero {
                     i,
                     class.equipment_allowed,
                 );
-                log::logger().flush();
             }
         }
         if do_panic {
+            log::logger().flush();
             panic!("Some equipment failed validation");
         }
 
@@ -640,11 +639,11 @@ impl Hero {
                         "Skill {} could not be found in keys for hero_skill_map",
                         skill_name
                     );
-                    log::logger().flush();
                 }
             }
             if do_panic {
-                panic!("Some skills could not be found in keys for hero_skill_map",);
+                log::logger().flush();
+                panic!("Some skills could not be found in keys for hero_skill_map");
             }
 
             let gear_quality = self.equipment_quality[gear_index].as_str();
