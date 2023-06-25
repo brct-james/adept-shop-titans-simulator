@@ -342,7 +342,7 @@ impl eframe::App for AdeptApp {
                             let seconds_remaining = (estimated - elapsed) % 60;
                             let minutes_remaining = ((estimated - elapsed) / 60) % 60;
                             let hours_remaining = ((estimated - elapsed) / 60) / 60;
-                            ui.add(egui::widgets::Spinner::new());
+                            ui.add_visible(*study != String::from("DOCKET OVERALL PROGRESS"), egui::widgets::Spinner::new());
                             if *study == String::from("DOCKET OVERALL PROGRESS") {
                                 ui.label(egui::RichText::new("Docket Overall").strong().underline());
                             } else {

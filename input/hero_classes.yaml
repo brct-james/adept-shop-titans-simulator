@@ -298,7 +298,7 @@ Barbarian:
     - Lion's Roar
     - Chieftain's Call
     - Dragon's Roar
-    - ''
+    - ""
 Berserker:
   class: Berserker
   prerequisite: Merchant Lv. 53
@@ -448,7 +448,7 @@ Berserker:
     - Berserk Rage
     - Anger Point
     - The Beast Within
-    - ''
+    - ""
 Chieftain:
   class: Chieftain
   prerequisite: Titan Soul (Barbarian)
@@ -1045,7 +1045,7 @@ Knight:
     - Fortress
     - Citadel
     - Bastion
-    - ''
+    - ""
 Lord:
   class: Lord
   prerequisite: Titan Soul (Knight)
@@ -1491,7 +1491,7 @@ Ranger:
     - Self-Sufficient
     - Live Off the Land
     - Hunter-Hermit
-    - ''
+    - ""
 Samurai:
   class: Samurai
   prerequisite: Merchant Lv. 46
@@ -1639,10 +1639,10 @@ Samurai:
     - Iaido
     - Lightning Iaido
     - Iaido Master
-    - ''
+    - ""
 Soldier:
   class: Soldier
-  prerequisite: ''
+  prerequisite: ""
   gold_hire_cost: 0
   gem_hire_cost: 0
   base_hp:
@@ -1787,7 +1787,7 @@ Soldier:
     - Martial Training
     - Martial Expert
     - Martial_Master
-    - ''
+    - ""
 Warden:
   class: Warden
   prerequisite: Titan Soul (Ranger)
@@ -2087,7 +2087,7 @@ Trickster:
     - Legendary Legerdemain
 Thief:
   class: Thief
-  prerequisite: ''
+  prerequisite: ""
   gold_hire_cost: 0
   gem_hire_cost: 0
   base_hp:
@@ -2233,7 +2233,7 @@ Thief:
     - Scoundrel
     - Dashing Rogue
     - Master Thief
-    - ''
+    - ""
 Monk:
   class: Monk
   prerequisite: Merchant Lv. 10
@@ -2380,7 +2380,7 @@ Monk:
     - Pressure Points
     - Pain Points
     - Forbidden Technique
-    - ''
+    - ""
 Grandmaster:
   class: Grandmaster
   prerequisite: Titan Soul (Monk)
@@ -2675,7 +2675,7 @@ Musketeer:
     - Bull's eye
     - Panache
     - Thrillseeker
-    - ''
+    - ""
 Conquistador:
   class: Conquistador
   prerequisite: Titan Soul (Musketeer)
@@ -2974,7 +2974,7 @@ Wanderer:
     - Evasive
     - On the Move
     - The Longest Road
-    - ''
+    - ""
 Pathfinder:
   class: Pathfinder
   prerequisite: Titan Soul (Wanderer)
@@ -3272,7 +3272,7 @@ Ninja:
     - Shadow Assassin
     - Darkness Menace
     - One With the Dark
-    - ''
+    - ""
 Sensei:
   class: Sensei
   prerequisite: Titan Soul (Ninja)
@@ -3569,7 +3569,7 @@ Dancer:
     - Elegant Riposte
     - Stinging Riposte
     - Devastating Riposte
-    - ''
+    - ""
 Acrobat:
   class: Acrobat
   prerequisite: Titan Soul (Dancer)
@@ -3721,7 +3721,7 @@ Acrobat:
     - Crescendo Counter
 Mage:
   class: Mage
-  prerequisite: ''
+  prerequisite: ""
   gold_hire_cost: 0
   gem_hire_cost: 0
   base_hp:
@@ -3866,7 +3866,7 @@ Mage:
     - Arcanist
     - High Arcanist
     - Thaumaturgist
-    - ''
+    - ""
 Archmage:
   class: Archmage
   prerequisite: Titan Soul (Mage)
@@ -4162,7 +4162,7 @@ Cleric:
     - Divine Intervention
     - Chosen
     - Crusader
-    - ''
+    - ""
 Bishop:
   class: Bishop
   prerequisite: Titan Soul (Cleric)
@@ -4459,7 +4459,7 @@ Druid:
     - Primal Magic
     - Ancestral Power
     - Might of the Land
-    - ''
+    - ""
 Sorcerer:
   class: Sorcerer
   prerequisite: Merchant Lv. 32
@@ -4607,7 +4607,7 @@ Sorcerer:
     - Dark Pact
     - Blood Pact
     - Fell Pact
-    - ''
+    - ""
 Warlock:
   class: Warlock
   prerequisite: Titan Soul (Sorcerer)
@@ -4915,7 +4915,7 @@ Spellblade:
     - Jack of All Trades
     - Ace of All Trades
     - Master of All Trades
-    - ''
+    - ""
 Spellknight:
   class: Spellknight
   prerequisite: Titan Soul (Spellblade)
@@ -5224,7 +5224,7 @@ Geomancer:
     - Geomancy
     - Terrain Attunement
     - Geo Purity
-    - ''
+    - ""
 Astramancer:
   class: Astramancer
   prerequisite: Titan Soul (Geomancer)

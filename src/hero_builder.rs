@@ -727,6 +727,12 @@ impl Hero {
             let mut gear_spirit_hp_bonus: f64;
 
             match gear_spirit_tier {
+                "T0" => {
+                    // Fresh Spirit
+                    gear_spirit_atk_bonus = 0.0;
+                    gear_spirit_def_bonus = 0.0;
+                    gear_spirit_hp_bonus = 0.0;
+                }
                 "T4" => {
                     // Low-Tier Spirits
                     gear_spirit_atk_bonus = 16.0;

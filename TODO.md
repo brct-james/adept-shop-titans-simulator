@@ -14,9 +14,6 @@
 - Verify the mastery skills have incompatible skills populated
 - Verify that the skillsets meant for testing with the alternative weapons are populated into the valid skills list correctly
 
-1. Investigate web assembly with rust (yew)
-   https://www.youtube.com/watch?v=P4LMfkFLRsI&ab_channel=NoBoilerplate
-
 2. System can resume (save out study index to study docket)
 3. After this is working, run a full skillset analysis (will need to add the alternative weapons/shield for the relevant heroes in hero builder) at 50k
 4. Build out the google sheets to include hero builder and study docket in same sheet. Dropdowns for all weapons, alt weapons, skills, etc. and dropdowns for heroes, dungeons, etc. in study docket.
