@@ -205,35 +205,22 @@ impl Hero {
 
         let mut element_qty = 0u16;
 
+        let mut equipment_that_could_not_be_found: Vec<String> = Default::default();
+        let mut equipment_that_is_not_allowed_on_the_specified_class: Vec<(String, String, usize)> =
+            Default::default();
         for (i, equipment) in self.equipment_equipped.iter().enumerate() {
             if !bp_map.contains_key(equipment) {
-                error!(
-                    "Equipment {} could not be validated as a known item",
-                    equipment
-                );
-                log::logger().flush();
-                panic!(
-                    "Equipment {} could not be validated as a known item",
-                    equipment
-                );
+                equipment_that_could_not_be_found.push(equipment.to_string());
+                continue;
             }
             let blueprint = bp_map.get(equipment).unwrap();
             if !class.equipment_allowed[i].contains(&blueprint.get_type()) {
-                error!(
-                    "Equipment {} is of type {} that is not allowed for this class in this slot (# {}). Valid options: {:#?}",
-                    equipment,
+                equipment_that_is_not_allowed_on_the_specified_class.push((
+                    equipment.to_string(),
                     blueprint.get_type(),
                     i,
-                    class.equipment_allowed,
-                );
-                log::logger().flush();
-                panic!(
-                    "Equipment {} is of type {} that is not allowed for this class in this slot (# {}). Valid options: {:#?}",
-                    equipment,
-                    blueprint.get_type(),
-                    i,
-                    class.equipment_allowed,
-                )
+                ));
+                continue;
             }
 
             let split_vec = self.elements_socketed[i].split(" ").collect::<Vec<&str>>();
@@ -287,6 +274,33 @@ impl Hero {
                 log::logger().flush();
                 panic!("Unknown element type {}", element);
             }
+        }
+        let mut do_panic = false;
+        if equipment_that_could_not_be_found.len() > 0 {
+            do_panic = true;
+            for equipment in equipment_that_could_not_be_found {
+                error!(
+                    "Equipment {} could not be validated as a known item",
+                    equipment
+                );
+                log::logger().flush();
+            }
+        }
+        if equipment_that_is_not_allowed_on_the_specified_class.len() > 0 {
+            do_panic = true;
+            for (equipment, bp_type, i) in equipment_that_is_not_allowed_on_the_specified_class {
+                error!(
+                    "Equipment {} is of type {} that is not allowed for this class in this slot (# {}). Valid options: {:#?}",
+                    equipment,
+                    bp_type,
+                    i,
+                    class.equipment_allowed,
+                );
+                log::logger().flush();
+            }
+        }
+        if do_panic {
+            panic!("Some equipment failed validation");
         }
 
         self.element_qty = element_qty;
@@ -568,6 +582,7 @@ impl Hero {
             }
 
             // Check for skills that give bonus stats to gear
+            let mut skills_that_could_not_be_found: Vec<String> = Default::default();
             for skill_name in &self.skills {
                 // log::info!(
                 //     "Check for skills that give bonus stats to gear - skill_name: {}",
@@ -577,15 +592,8 @@ impl Hero {
                     continue;
                 }
                 if !hero_skill_map.contains_key(skill_name) {
-                    error!(
-                        "Skill {} could not be found in keys for hero_skill_map",
-                        skill_name
-                    );
-                    log::logger().flush();
-                    panic!(
-                        "Skill {} could not be found in keys for hero_skill_map",
-                        skill_name
-                    );
+                    skills_that_could_not_be_found.push(skill_name.to_string());
+                    continue;
                 }
 
                 // Calculate skill tier and get the correct skill
@@ -623,6 +631,20 @@ impl Hero {
                         }
                     }
                 }
+            }
+            let mut do_panic = false;
+            if skills_that_could_not_be_found.len() > 0 {
+                do_panic = true;
+                for skill_name in skills_that_could_not_be_found {
+                    error!(
+                        "Skill {} could not be found in keys for hero_skill_map",
+                        skill_name
+                    );
+                    log::logger().flush();
+                }
+            }
+            if do_panic {
+                panic!("Some skills could not be found in keys for hero_skill_map",);
             }
 
             let gear_quality = self.equipment_quality[gear_index].as_str();
