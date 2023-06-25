@@ -206,8 +206,12 @@ impl Hero {
         let mut element_qty = 0u16;
 
         let mut equipment_that_could_not_be_found: Vec<String> = Default::default();
-        let mut equipment_that_is_not_allowed_on_the_specified_class: Vec<(String, String, usize)> =
-            Default::default();
+        let mut equipment_that_is_not_allowed_on_the_specified_class: Vec<(
+            String,
+            String,
+            String,
+            usize,
+        )> = Default::default();
         for (i, equipment) in self.equipment_equipped.iter().enumerate() {
             if !bp_map.contains_key(equipment) {
                 equipment_that_could_not_be_found.push(equipment.to_string());
@@ -218,6 +222,7 @@ impl Hero {
                 equipment_that_is_not_allowed_on_the_specified_class.push((
                     equipment.to_string(),
                     blueprint.get_type(),
+                    class.class.to_string(),
                     i,
                 ));
                 continue;
@@ -287,11 +292,14 @@ impl Hero {
         }
         if equipment_that_is_not_allowed_on_the_specified_class.len() > 0 {
             do_panic = true;
-            for (equipment, bp_type, i) in equipment_that_is_not_allowed_on_the_specified_class {
+            for (equipment, bp_type, class_type, i) in
+                equipment_that_is_not_allowed_on_the_specified_class
+            {
                 error!(
-                    "Equipment {} is of type {} that is not allowed for this class in this slot (# {}). Valid options: {:#?}",
+                    "Equipment {} is of type {} that is not allowed for this class ({}) in this slot (# {}). Valid options: {:#?}",
                     equipment,
                     bp_type,
+                    class_type,
                     i,
                     class.equipment_allowed,
                 );
