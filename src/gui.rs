@@ -10,8 +10,8 @@ use crate::{
     dockets::Docket,
     init,
     inputs::{
-        load_dungeons_from_yaml, load_hero_classes_from_yaml, load_heroes_as_sim_heroes_from_csv,
-        load_heroes_from_csv, load_skill_abbreviation_map, load_study_docket,
+        load_dungeons_from_yaml, load_hero_classes_from_yaml, load_heroes_as_sim_heroes_from_tsv,
+        load_heroes_from_tsv, load_skill_abbreviation_map, load_study_docket,
     },
     sheet_processing::{get_hero_equipment_data, get_hero_skills_data, get_innate_skills_data},
     simdata::SimData,
@@ -68,11 +68,11 @@ impl Default for AdeptApp {
                 ),
                 (
                     String::from("Hero Builder"),
-                    (String::from("adept_data/config/hero_builder.csv"), false),
+                    (String::from("adept_data/config/hero_builder.tsv"), false),
                 ),
                 (
                     String::from("Study Docket"),
-                    (String::from("adept_data/config/study_docket.csv"), false),
+                    (String::from("adept_data/config/study_docket.tsv"), false),
                 ),
             ]),
             sim_data: Default::default(),
@@ -114,7 +114,7 @@ impl eframe::App for AdeptApp {
                             log::logger().flush();
                             panic!("Hero builder could not be loaded because one or more of the files it depends on was not loaded");
                         }
-                        let loaded_heroes = load_heroes_as_sim_heroes_from_csv(
+                        let loaded_heroes = load_heroes_as_sim_heroes_from_tsv(
                             &path,
                             self.sim_data.bp_map.clone(),
                             self.sim_data.hero_classes.clone(),
@@ -123,7 +123,7 @@ impl eframe::App for AdeptApp {
                             self.sim_data.class_innate_skill_names_map.clone(),
                             self.sim_data.innate_skill_map.clone(),
                         );
-                        let loaded_heroes_from_builder = load_heroes_from_csv(
+                        let loaded_heroes_from_builder = load_heroes_from_tsv(
                             &path,
                             self.sim_data.bp_map.clone(),
                             self.sim_data.hero_classes.clone(),

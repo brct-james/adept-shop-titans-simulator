@@ -1,0 +1,4 @@
+Completed	Identifier	Description	Type	Skill Name Format	Simulation Qty	Runoff Scoring Threshold	Team Hero Identifiers	Team Booster	Static Preset Skills	Dungeon Specifications	Automatic Rank Difficulty Optimization	Excluded Skills
+FALSE	Daimyo_Atk_Main_Duo	Optimize Daimyo for ATK with Lord Duo	StaticDuoSkillStudy	Abbreviated	50000	100	Daimyo-Atk_Test_Main; Lord_Control	None	War;Pow	Bleakspire Peak:Boss Hard:No Minibosses	FALSE	Mar;Bow;Spe
+FALSE	Not A Duplicate	Optimize Daimyo for ATK with Lord Duo	StaticDuoSkillStudy	Abbreviated	50000	100	Daimyo-Atk_Test_Main; Lord_Control	None	War;Whi	Bleakspire Peak:Boss Hard:No Minibosses	FALSE	Mar;Bow;Spe
+FALSE	Daimyo_Atk_Main_Duo	Optimize Daimyo for ATK with Lord Duo	StaticDuoSkillStudy	Abbreviated	50000	100	Daimyo-Atk_Test_Main; Lord_Control	None	War;All	Bleakspire Peak:Boss Hard:No Minibosses	FALSE	Mar;Bow;Spe

@@ -516,13 +516,19 @@ pub fn create_hero_input(
     };
 }
 
-pub fn load_heroes_from_csv(
+pub fn load_heroes_from_tsv(
     path: &String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
 ) -> HashMap<String, Hero> {
     let mut heroes: HashMap<String, Hero> = Default::default();
-    let mut reader = csv::Reader::from_path(path).unwrap();
+
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .has_headers(true)
+        .from_path(path)
+        .unwrap();
+
     for result in reader.deserialize() {
         let hero_in: HeroInput = result.unwrap();
         let identifier = hero_in.identifier.to_string();
@@ -557,7 +563,7 @@ pub fn convert_loaded_heroes_to_sim_heroes(
     return result;
 }
 
-pub fn load_heroes_as_sim_heroes_from_csv(
+pub fn load_heroes_as_sim_heroes_from_tsv(
     path: &String,
     bp_map: HashMap<String, Blueprint>,
     hero_classes: HashMap<String, HeroClass>,
@@ -567,7 +573,12 @@ pub fn load_heroes_as_sim_heroes_from_csv(
     innate_skill_map: HashMap<String, InnateSkill>,
 ) -> HashMap<String, SimHero> {
     let mut heroes: HashMap<String, SimHero> = Default::default();
-    let mut reader = csv::Reader::from_path(path).unwrap();
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .has_headers(true)
+        .from_path(path)
+        .unwrap();
+
     for result in reader.deserialize() {
         let hero_in: HeroInput = result.unwrap();
         let identifier = hero_in.identifier.to_string();
@@ -589,7 +600,7 @@ pub fn load_heroes_as_sim_heroes_from_csv(
     return heroes;
 }
 
-pub fn _save_heroes_to_csv(
+pub fn _save_heroes_to_tsv(
     path: String,
     heroes: HashMap<String, Hero>,
 ) -> Result<(), std::io::Error> {
@@ -603,6 +614,7 @@ pub fn _save_heroes_to_csv(
         .unwrap();
 
     let mut wtr = csv::WriterBuilder::new()
+        .delimiter(b'\t')
         .has_headers(!already_exists)
         .from_writer(writer);
 
@@ -678,6 +690,7 @@ pub fn load_study_docket(path: &String) -> Docket {
     docket.set_path(path.to_string());
     let reader = std::fs::OpenOptions::new().read(true).open(path).unwrap();
     let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
         .has_headers(true)
         .trim(csv::Trim::All)
         .from_reader(reader);
@@ -702,6 +715,7 @@ pub fn save_study_docket(path: &String, docket: &Docket) -> Result<(), std::io::
         .unwrap();
 
     let mut wtr = csv::WriterBuilder::new()
+        .delimiter(b'\t')
         .has_headers(true)
         .from_writer(writer);
 

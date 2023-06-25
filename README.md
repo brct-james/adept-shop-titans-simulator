@@ -52,6 +52,7 @@ A rust-based simulator for the game Shop Titans
       - `Sunken Temple`
       - `Bleakspire Peak`
       - `Cinderlake Volcano`
+      - `Void Dimension`
     - `Difficulty`: Difficulty must match exactly one specified below:
       - `Easy`
       - `Medium`
