@@ -1,4 +1,4 @@
-currentversion="0.1.2"
+currentversion="0.1.3"
 clear
 echo "Building Adept v${currentversion}"
 cargo set-version ${currentversion}
