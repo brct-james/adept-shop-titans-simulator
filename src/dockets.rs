@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use log::info;
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
 use rayon::prelude::*;
@@ -281,7 +281,7 @@ impl Docket {
                     String::from("DOCKET OVERALL PROGRESS"),
                     *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
                 )).unwrap();
-                info!("Skipping study {} since it is already completed.", docket_study.identifier);
+                warn!("Skipping study {} since it is already completed.", docket_study.identifier);
                 return;
             }
 
@@ -291,7 +291,12 @@ impl Docket {
             match parse_team_option {
                 Some(parsed_team) => team = parsed_team,
                 None => {
-                    info!("\tFailed to Parse Team: Skipping to Next Study");
+                    *completed_study_count.lock().unwrap() += 1;
+                    tx.send((
+                        String::from("DOCKET OVERALL PROGRESS"),
+                        *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
+                    )).unwrap();
+                    warn!("\tFailed to Parse Team: Skipping to Next Study");
                     return;
                 }
             }
@@ -304,7 +309,12 @@ impl Docket {
             match parse_dungeons_option {
                 Some(parsed_dungeon) => dungeons = parsed_dungeon,
                 None => {
-                    info!("\tFailed to Parse Dungeons: Skipping to Next Study");
+                    *completed_study_count.lock().unwrap() += 1;
+                    tx.send((
+                        String::from("DOCKET OVERALL PROGRESS"),
+                        *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
+                    )).unwrap();
+                    warn!("\tFailed to Parse Dungeons: Skipping to Next Study");
                     return;
                 }
             }
@@ -321,7 +331,12 @@ impl Docket {
             match parse_valid_skills_option {
                 Some(parsed_vs) => valid_skills = parsed_vs,
                 None => {
-                    info!("\tFailed to Parse Excluded Skills (Did not conform to expected format): Skipping to Next Study");
+                    *completed_study_count.lock().unwrap() += 1;
+                    tx.send((
+                        String::from("DOCKET OVERALL PROGRESS"),
+                        *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
+                    )).unwrap();
+                    warn!("\tFailed to Parse Excluded Skills (Did not conform to expected format): Skipping to Next Study");
                     return;
                 }
             }
@@ -346,7 +361,12 @@ impl Docket {
             match parse_static_skills_option {
                 Some(parsed_static_skills) => static_skills = parsed_static_skills,
                 None => {
-                    info!("\tFailed to Parse Static/Preset Skills (Did not conform to expected format): Skipping to Next Study");
+                    *completed_study_count.lock().unwrap() += 1;
+                    tx.send((
+                        String::from("DOCKET OVERALL PROGRESS"),
+                        *completed_study_count.lock().unwrap(), num_dockets as u32, docket_start_instant
+                    )).unwrap();
+                    warn!("\tFailed to Parse Static/Preset Skills (Did not conform to expected format): Skipping to Next Study");
                     return;
                 }
             }
@@ -474,6 +494,7 @@ fn parse_dungeons(
         match loaded_dungeon {
             Some(somedun) => dun = somedun.clone(),
             None => {
+                error!("Could not load dungeon with name {}", dungeon_name);
                 return None;
             }
         }
@@ -492,6 +513,10 @@ fn parse_dungeons(
         match loaded_diff {
             Some(somedundiff) => dundiff = somedundiff.clone(),
             None => {
+                error!(
+                    "Could not load dungeon with difficulty {}",
+                    dungeon_difficulty
+                );
                 return None;
             }
         }
@@ -505,6 +530,10 @@ fn parse_dungeons(
         match loaded_miniboss_setting {
             Some(somedunmb) => dunmb = somedunmb.clone(),
             None => {
+                error!(
+                    "Could not load dungeon with miniboss setting {}",
+                    dungeon_miniboss_setting
+                );
                 return None;
             }
         }
