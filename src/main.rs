@@ -38,6 +38,8 @@ mod init;
 
 mod simdata;
 
+mod deserialize;
+
 use std::ops::Deref;
 use std::panic;
 

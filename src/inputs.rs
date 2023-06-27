@@ -688,18 +688,30 @@ pub fn load_skill_abbreviation_map(
 pub fn load_study_docket(path: &String) -> Docket {
     let mut docket: Docket = Default::default();
     docket.set_path(path.to_string());
-    let reader = std::fs::OpenOptions::new().read(true).open(path).unwrap();
-    let mut rdr = csv::ReaderBuilder::new()
+    let mut reader = csv::ReaderBuilder::new()
         .delimiter(b'\t')
         .has_headers(true)
-        .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_path(path)
+        .unwrap();
     let mut result_index: usize = 0;
-    for result in rdr.deserialize() {
+    for result in reader.deserialize::<DocketStudy>() {
         result_index += 1;
-        let input: DocketStudy = result.unwrap();
-        if input.is_valid(result_index) {
-            docket.add_study(input);
+        // let input: DocketStudy = result.unwrap();
+        match result {
+            Ok(input) => {
+                if input.is_valid(result_index) {
+                    docket.add_study(input);
+                }
+            }
+            Err(e) => match e.kind() {
+                csv::ErrorKind::Deserialize { pos, err } => {
+                    panic!(
+                        "Deserialization Error:\n{:#?}\nat position:\n{:#?}",
+                        err, pos
+                    )
+                }
+                _ => panic!("{}", e),
+            },
         }
     }
     return docket;

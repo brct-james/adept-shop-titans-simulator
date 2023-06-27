@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use rayon::prelude::*;
 
+use crate::deserialize::bool_from_str;
 use crate::dungeons::create_trial_dungeon;
 use crate::dungeons::{Dungeon, TrialDungeon};
 use crate::equipment::BoosterType;
@@ -18,11 +19,11 @@ use crate::inputs::save_study_docket;
 use crate::simdata::SimData;
 use crate::studies::{HeroBuilderInformation, Runnable};
 use crate::{heroes::SimHero, studies::static_duo_skill_study::create_static_duo_skill_study};
-
 /// Holds info for generating a study, defines format for deserialization from CSV
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct DocketStudy {
     #[serde(rename(serialize = "Completed", deserialize = "Completed"))]
+    #[serde(deserialize_with = "bool_from_str")]
     completed: bool,
     #[serde(rename(serialize = "Identifier", deserialize = "Identifier"))]
     identifier: String,
@@ -60,6 +61,7 @@ pub struct DocketStudy {
         serialize = "Automatic Rank Difficulty Optimization",
         deserialize = "Automatic Rank Difficulty Optimization"
     ))]
+    #[serde(deserialize_with = "bool_from_str")]
     automatic_rank_difficulty_optimization: bool,
     #[serde(rename(serialize = "Excluded Skills", deserialize = "Excluded Skills"))]
     excluded_skills: String,

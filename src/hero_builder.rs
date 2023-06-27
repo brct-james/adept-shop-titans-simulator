@@ -242,7 +242,7 @@ impl Hero {
             }
             let element = split_vec[0];
             let grade = split_vec[1];
-            if element == self.element_type {
+            if element == self.element_type || self.element_type == String::from("Any") {
                 match grade {
                     "1" => {
                         element_qty += 5;
@@ -269,7 +269,7 @@ impl Hero {
                         }
                     }
                     _ => {
-                        error!("Unknown element type {}", element);
+                        error!("Unknown element grade {}", element);
                         log::logger().flush();
                         panic!(
                             "Unknown element grade {} for identifier {}",
@@ -356,6 +356,18 @@ impl Hero {
                 is.get_tier_1_name() == innate_skill && is.get_element_qty_req() < self.element_qty
             })
             .collect::<Vec<&InnateSkill>>();
+
+        if innate_skill_variants.len() == 0 {
+            error!(
+                "Could not calculate innate tier, id: {}, innate_skill: {}, class: {}, innate_skill_map contains innate_skill?: {}",
+                self.identifier, innate_skill, self.class, innate_skill_map.contains_key(&innate_skill)
+            );
+            log::logger().flush();
+            panic!(
+                "Could not calculate innate tier, id: {}, innate_skill: {}, class: {}, innate_skill_map contains innate_skill?: {}",
+                self.identifier, innate_skill, self.class, innate_skill_map.contains_key(&innate_skill)
+            );
+        }
 
         innate_skill_variants.sort_unstable_by_key(|is| is.get_skill_tier());
 
